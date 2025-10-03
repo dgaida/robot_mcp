@@ -1,0 +1,37 @@
+# Requirements for MCP Robot Control System
+# Install with: pip install -r requirements_mcp.txt
+
+# Core MCP dependencies
+mcp>=0.9.0
+groq>=0.11.0
+
+# Robot environment core dependencies
+numpy>=1.20.0
+opencv-python>=4.5.0
+redis>=4.0.0
+torch>=2.0.0
+torchaudio>=2.0.0
+sounddevice>=0.4.0
+
+# Vision and communication (adjust package names as needed)
+# vision-detect-segment>=0.1.0
+# redis-robot-comm>=0.1.0
+
+# Text-to-speech
+# elevenlabs>=0.2.0  # Optional
+# kokoro>=0.1.0      # Alternative TTS
+
+# Niryo robot support (optional)
+# pyniryo>=1.1.0
+
+# WidowX robot support (optional)
+# interbotix-xs-modules>=0.1.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Utility packages
+python-dotenv>=1.0.0  # For loading .env files
