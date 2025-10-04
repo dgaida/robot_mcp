@@ -66,11 +66,14 @@ class RobotMCPServer:
         logger.info(f"Log file: {log_filename}")
         logger.info("=" * 50)
 
-        self.env = Environment(el_api_key, use_simulation, robot_id, verbose=False)
+        self.env = Environment(el_api_key, use_simulation, robot_id, verbose=False, start_camera_thread=False)
         self.robot = self.env.robot()
         self.server = Server("robot-environment")
 
         self.available_tools = self._create_tool_definitions()
+
+        # Request Counter für Debugging
+        self.request_counter = 0
 
         self._setup_handlers()
 
@@ -405,7 +408,19 @@ class RobotMCPServer:
 
     def _setup_handlers(self):
         """Set up MCP server request handlers."""
-        
+
+        # Add request interceptor
+        # @self.server.request()
+        # async def handle_request(request):
+        #     """Log all incoming requests."""
+        #     self.request_counter += 1
+        #     logger.info("=" * 60)
+        #     logger.info(f"REQUEST #{self.request_counter} RECEIVED")
+        #     logger.info(f"Method: {request.method if hasattr(request, 'method') else 'unknown'}")
+        #     logger.info(f"Request type: {type(request).__name__}")
+        #     logger.info(f"Request: {request}")
+        #     logger.info("=" * 60)
+
         @self.server.list_tools()
         async def list_tools() -> list[Tool]:
             """List all available robot control tools."""
@@ -739,6 +754,7 @@ async def main():
     logger.info("Server shutdown complete")
 
 
+# python server/mcp_robot_server.py niryo true
 if __name__ == "__main__":
     try:
         # Write startup message to stderr (won't interfere with MCP stdio)

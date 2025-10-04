@@ -103,6 +103,8 @@ Always be precise and verify object positions before attempting to manipulate th
         """Connect to the MCP server."""
         logger.info("Starting connection to MCP server...")
 
+        self.server_script_path = os.path.abspath(os.path.join("server", "mcp_min_server.py"))
+
         server_params = StdioServerParameters(
             command="python",
             args=[
