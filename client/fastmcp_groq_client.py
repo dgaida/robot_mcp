@@ -14,7 +14,7 @@ import logging
 
 # Client can use stdout since it doesn't communicate via stdio
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("RobotMCPClient")
@@ -175,7 +175,7 @@ class RobotFastMCPClient:
             "content": user_message
         })
 
-        max_iterations = 3  # 10  # Prevent infinite loops
+        max_iterations = 4  # 10  # Prevent infinite loops
         iteration = 0
 
         while iteration < max_iterations:
@@ -267,6 +267,8 @@ class RobotFastMCPClient:
         print("  - 'Pick up the pencil and place it at [0.2, 0.1]'")
         print("  - 'Move the red cube to the right of the blue square'")
         print("  - 'Show me the largest object'")
+        print("  - 'Pick all pens or pencils and place them left next to the chocolate bar.'")
+        print("  - 'Swap positions of pencil and chocolate bar.'")
         print("\nType 'quit' or 'exit' to stop.")
         print("Type 'tools' to see available tools.")
         print("Type 'clear' to clear conversation history.")
