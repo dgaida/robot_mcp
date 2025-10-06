@@ -1,5 +1,6 @@
 # fastmcp_robot_server.py
 from typing import Optional, List, Union, Dict
+import argparse
 
 from fastmcp import FastMCP
 from robot_environment import Environment
@@ -30,8 +31,31 @@ logger = logging.getLogger("FastMCPRobotServer")
 mcp = FastMCP("robot-environment")
 
 # Environment-Setup (vereinfacht, Parameter kannst du anpassen)
-env = Environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=True)
-robot = env.robot()
+# env = Environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=True)
+# robot = env.robot()
+
+# Global environment - wird später initialisiert
+env = None
+robot = None
+
+
+def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
+                           verbose=False, start_camera_thread=False):
+    """Initialize the robot environment with given parameters."""
+    global env, robot
+
+    logger.info(f"Initializing environment: robot={robot_id}, simulation={use_simulation}")
+
+    env = Environment(
+        el_api_key=el_api_key,
+        use_simulation=use_simulation,
+        robot_id=robot_id,
+        verbose=verbose,
+        start_camera_thread=start_camera_thread
+    )
+    robot = env.robot()
+
+    logger.info("Environment initialized successfully")
 
 
 # ENVIRONMENT TOOLS
@@ -377,5 +401,44 @@ def speak(text: str) -> str:
 
 
 # python server/fastmcp_robot_server.py
+def main():
+    """Main entry point when running as script."""
+    parser = argparse.ArgumentParser(description="FastMCP Robot Server")
+    parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo")
+    parser.add_argument("--no-simulation", action="store_true")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--no-camera", action="store_false")
+    parser.add_argument("--verbose", action="store_true")
+
+    args = parser.parse_args()
+
+    # Initialize environment
+    initialize_environment(
+        el_api_key="",
+        use_simulation=not args.no_simulation,
+        robot_id=args.robot,
+        verbose=args.verbose,
+        start_camera_thread=not args.no_camera
+    )
+
+    print("=" * 60)
+    print("STARTING FASTMCP ROBOT SERVER")
+    print("=" * 60)
+    print(f"Robot:        {args.robot}")
+    print(f"Simulation:   {not args.no_simulation}")
+    print(f"Host:         {args.host}")
+    print(f"Port:         {args.port}")
+    print(f"Camera:       {not args.no_camera}")
+    print("=" * 60)
+    print(f"\nServer running at: http://{args.host}:{args.port}")
+    print(f"SSE endpoint: http://{args.host}:{args.port}/sse")
+    print("\nPress Ctrl+C to stop")
+    print("=" * 60 + "\n")
+
+    # Run server
+    mcp.run(transport="sse", host=args.host, port=args.port)
+
+
 if __name__ == "__main__":
-    mcp.run(transport="sse", host="127.0.0.1", port=8000)
+    main()

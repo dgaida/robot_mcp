@@ -1,0 +1,206 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robot-mcp"
+version = "0.1.0"
+description = "Natural language robot control using Model Context Protocol (MCP) and LLM"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "dgaida", email = "your.email@example.com"}
+]
+keywords = ["robotics", "mcp", "llm", "groq", "pick-and-place", "fastmcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Robotics",
+]
+
+# Core dependencies
+dependencies = [
+    "numpy>=1.20.0",
+    "opencv-python>=4.5.0",
+    "torch>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# MCP Server and Client dependencies
+mcp = [
+    "mcp>=0.9.0",
+    "fastmcp>=0.1.0",
+    "groq>=0.11.0",
+]
+
+# GUI dependencies
+gui = [
+    "gradio>=4.0.0",
+    "sounddevice>=0.4.0",
+    "scipy>=1.9.0",
+    "whisper-mic>=1.0.0",
+]
+
+# Speech and communication
+speech = [
+    "sounddevice>=0.4.0",
+    "scipy>=1.9.0",
+    "whisper-mic>=1.0.0",
+    "transformers>=4.30.0",
+    # "elevenlabs>=0.2.0",  # Optional TTS
+]
+
+# Vision and detection
+vision = [
+    "ultralytics>=8.0.0",  # YOLO
+    "torchvision>=0.15.0",
+]
+
+# Robot hardware support
+niryo = [
+    # "pyniryo>=1.1.0",
+]
+
+widowx = [
+    # "interbotix-xs-modules>=0.1.0",
+]
+
+# Redis communication
+redis = [
+    "redis>=4.0.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "isort>=5.12.0",
+]
+
+# Documentation
+docs = [
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "myst-parser>=1.0.0",
+]
+
+# All dependencies combined
+all = [
+    "robot-mcp[mcp,gui,speech,vision,redis,dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/dgaida/robot-mcp"
+Documentation = "https://github.com/dgaida/robot-mcp/blob/main/README.md"
+Repository = "https://github.com/dgaida/robot-mcp"
+"Bug Tracker" = "https://github.com/dgaida/robot-mcp/issues"
+
+[project.scripts]
+# Command-line scripts
+robot-mcp-server = "server.mcp_robot_server:main"
+robot-mcp-client = "client.mcp_groq_client:main"
+robot-fastmcp-server = "server.fastmcp_robot_server:main"
+robot-fastmcp-client = "client.fastmcp_groq_client:main"
+robot-gui = "robot_gui.mcp_app:main"
+robot-launcher = "mcp_server_launcher:main"
+robot-examples = "examples_mcp_client:main"
+
+[tool.setuptools]
+packages = ["client", "server", "robot_gui"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.txt", "*.sh", "*.bat"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = [
+    "tests",
+]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["client", "server", "robot_gui"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "E266", "E501", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+]
+max-complexity = 10
