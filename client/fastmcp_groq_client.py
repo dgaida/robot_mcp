@@ -31,6 +31,21 @@ class RobotFastMCPClient:
         # System prompt for the LLM
         self.system_prompt = """You are a helpful robot control assistant. You have access to various tools to control a robotic arm and detect objects in its workspace.
 
+        Robot Information:
+        1. The robot has a gripper. It can pick up objects up to 0.05 meters in size.
+        2. The robot has a gripper-mounted camera that captures images of its workspace.
+        3. Detected objects are described along with their (x,y) world coordinates (center of the object) and their size in meters.
+        4. **World Coordinate System**:
+           - The world coordinate system is Cartesian, anchored at the base of the robot arm. 
+           - The x-axis is the vertical axis. The values on the x-axis increase from bottom to top.
+           - The y-axis is the horizontal axis. The values on the y-axis increase from right to left. The y-axis origin (0.0) is in the center of the workspace.
+           - The coordinate values of both axes are measured in meters.
+        5. **Workspace**:
+           - The upper left corner of the workspace has the world coordinates (0.337, 0.087).
+           - The lower right corner of the workspace has the world coordinates (0.163, -0.087).
+           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a negative y-coordinate are located on the right side of the workspace. 
+           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a positive y-coordinate are located on the left side of the workspace. 
+
         Key capabilities:
         - Pick and place objects using coordinates
         - Detect and query objects in the workspace
@@ -38,16 +53,16 @@ class RobotFastMCPClient:
         - Get information about workspaces
 
         When the user asks you to do something:
-        1. Use the available tools to accomplish the task
-        2. Always call get_detected_objects first to understand what's in the workspace
-        3. Use exact coordinates from detected objects for pick and place operations
-        4. Provide clear feedback about what you're doing
-        5. If something fails, explain what went wrong
-
-        Coordinate system:
-        - Coordinates are in meters [x, y]
-        - X-axis: forward/backward from robot base
-        - Y-axis: left/right from robot base
+        1. If the user's task is in a language other than English, translate it into English first.
+        2. Use the available tools to accomplish the task
+        3. Always call get_detected_objects first to understand what's in the workspace
+        4. Use exact coordinates from detected objects for pick and place operations
+        5. Double-check object locations when dealing with multiple similar objects.
+        6. Make sure that the names of the objects passed to the tools ('object_name') match the names returned by get_detected_objects EXACTLY.
+        7. Adhere strictly to the specified tool call format to avoid execution errors.
+        8. Provide clear feedback about what you're doing
+        9. If something fails, explain what went wrong
+        10. Always respond in English, even if the original input is in another language.
 
         Location options for placement:
         - "left next to" - places object to the left
@@ -62,6 +77,11 @@ class RobotFastMCPClient:
         transport = SSETransport("http://127.0.0.1:8000/sse")
 
         self.client = Client(transport)
+
+    #         Coordinate system:
+    #         - Coordinates are in meters [x, y]
+    #         - X-axis: forward/backward from robot base
+    #         - Y-axis: left/right from robot base
 
     async def connect(self):
         print("🤖 Connecting to FastMCP server...")

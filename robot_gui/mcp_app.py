@@ -22,9 +22,10 @@ from dotenv import load_dotenv
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from robot_environment import Environment
+# TODO: macht eigentlich keinen Sinn speech2text in robot_environment zu haben, sollte besser in diesem package sein
 from robot_environment.speech2text import Speech2Text
 from client.fastmcp_groq_client import RobotFastMCPClient
+from redis_robot_comm import RedisImageStreamer
 
 
 class RobotMCPGUI:
@@ -67,7 +68,9 @@ class RobotMCPGUI:
         self.environment: Optional[Environment] = None
         self.mcp_client: Optional[RobotFastMCPClient] = None
         self.speech2text: Optional[Speech2Text] = None
-        
+
+        self._initialize_redis_streamer()
+
         # Executor for async tasks
         self.executor = ThreadPoolExecutor(max_workers=4)
         
@@ -80,7 +83,16 @@ class RobotMCPGUI:
         
         # Chat history
         self.chat_history = []
-        
+
+    def _initialize_redis_streamer(self):
+        """Initialize Redis image streamer."""
+        try:
+            self._streamer = RedisImageStreamer(stream_name="robot_camera")
+        except Exception as e:
+            if self.verbose:
+                print(f"Redis streamer initialization failed: {e}")
+            self._streamer = None
+
     def initialize_environment(self):
         """Initialize the robot environment."""
         try:
@@ -88,14 +100,14 @@ class RobotMCPGUI:
             torch_dtype = torch.float16 if device == "cuda" else torch.float32
 
             # TODO: das darf man hier nicht machen, da environment im mcp server läuft
-            print("Initializing robot environment...")
-            self.environment = Environment(
-                el_api_key=self.elevenlabs_api_key,
-                use_simulation=self.use_simulation,
-                robot_id=self.robot_id,
-                verbose=self.verbose,
-                start_camera_thread=False
-            )
+            # print("Initializing robot environment...")
+            # self.environment = Environment(
+            #     el_api_key=self.elevenlabs_api_key,
+            #     use_simulation=self.use_simulation,
+            #     robot_id=self.robot_id,
+            #     verbose=self.verbose,
+            #     start_camera_thread=False
+            # )
 
             # Initialize speech recognition
             self.speech2text = Speech2Text(
@@ -118,19 +130,26 @@ class RobotMCPGUI:
             traceback.print_exc()
             return False
 
-    # TODO: das darf hier auch nict laufen, stattdessen einen imagestreamer hier initialisieren, der sich immer das
+    # TODO: einen imagestreamer hier initialisieren, der sich immer das
     # aktuelle bild über redis holt. dort wird aktuell aber nur das original frame veröffentlicht und noch nicht
     # das annotated image
     def _start_camera_updates(self):
         """Start camera update thread."""
         def camera_loop():
-            try:
-                for img in self.environment.update_camera_and_objects(visualize=True):
+            while True:
+                try:
+                    result = self._streamer.get_latest_image()
+                    if not result:
+                        if self.verbose:
+                            print("No image available from Redis")
+
+                    img, metadata = result
+
                     with self.frame_lock:
                         self.current_frame = img
                     time.sleep(0.1)  # 10 FPS
-            except Exception as e:
-                print(f"Camera thread error: {e}")
+                except Exception as e:
+                    print(f"Camera thread error: {e}")
 
         self.camera_thread = threading.Thread(target=camera_loop, daemon=True)
         self.camera_thread.start()
