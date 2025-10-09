@@ -198,7 +198,7 @@ def pick_object(object_name: str, pick_coordinate: List) -> bool:
     Returns:
         bool: True
     """
-    return robot.pick_place_object(object_name=object_name, pick_coordinate=pick_coordinate)
+    return robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate)
 
 
 @mcp.tool
@@ -222,7 +222,7 @@ def place_object(place_coordinate: List, location: Union[Location, str, None] = 
         bool: True
     """
 
-    return robot.pick_place_object(place_coordinate=place_coordinate, location=location)
+    return robot.place_object(place_coordinate=place_coordinate, location=location)
 
 
 @mcp.tool
@@ -405,10 +405,10 @@ def main():
     """Main entry point when running as script."""
     parser = argparse.ArgumentParser(description="FastMCP Robot Server")
     parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo")
-    parser.add_argument("--no-simulation", action="store_true")
+    parser.add_argument("--no-simulation", action="store_false")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--no-camera", action="store_false")
+    parser.add_argument("--no-camera", action="store_true")
     parser.add_argument("--verbose", action="store_true")
 
     args = parser.parse_args()
