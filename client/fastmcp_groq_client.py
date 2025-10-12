@@ -9,6 +9,7 @@ from fastmcp import Client
 from fastmcp.client.transports import SSETransport
 from groq import Groq
 from dotenv import load_dotenv
+# from redis_robot_comm import RedisMessageBroker
 
 import logging
 
@@ -27,6 +28,10 @@ class RobotFastMCPClient:
         # self.server_script = server_script
         self.available_tools: List[Dict[str, Any]] = []
         self.conversation_history: List[Dict[str, str]] = []
+
+        # self._broker = RedisMessageBroker()
+
+        # TODO: wo steht, dass er am Ende move2observation_pose aufrufen soll?
 
         # System prompt for the LLM
         self.system_prompt = """You are a helpful robot control assistant. You have access to various tools to control a robotic arm and detect objects in its workspace.
@@ -54,14 +59,15 @@ class RobotFastMCPClient:
 
         When the user asks you to do something:
         1. If the user's task is in a language other than English, translate it into English first.
-        2. Use the available tools to accomplish the task
-        3. Always call get_detected_objects first to understand what's in the workspace
-        4. Use exact coordinates from detected objects for pick and place operations
+        2. Use the available tools to accomplish the task. 
+        3. Always call get_detected_objects first to understand what's in the workspace. 
+        Do this before each pick or place command, as the objects may change their positions. 
+        4. Use exact coordinates from detected objects for pick and place operations. 
         5. Double-check object locations when dealing with multiple similar objects.
         6. Make sure that the names of the objects passed to the tools ('object_name') match the names returned by get_detected_objects EXACTLY.
         7. Adhere strictly to the specified tool call format to avoid execution errors.
-        8. Provide clear feedback about what you're doing
-        9. If something fails, explain what went wrong
+        8. Provide clear feedback about what you're doing.
+        9. If something fails, explain what went wrong.
         10. Always respond in English, even if the original input is in another language.
 
         Location options for placement:
@@ -201,10 +207,15 @@ class RobotFastMCPClient:
         while iteration < max_iterations:
             iteration += 1
 
+            # get objects
+            # objects_dict_list = self._broker.get_latest_objects(10)
+
             # Prepare messages for Groq
             messages = [
                            {"role": "system", "content": self.system_prompt}
-                       ] + self.conversation_history
+                       ] + self.conversation_history  # + objects_dict_list
+
+            # print(messages)
 
             # Call Groq API
             try:

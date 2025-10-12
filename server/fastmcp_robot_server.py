@@ -262,6 +262,18 @@ def move2observation_pose(workspace_id: str) -> None:
     return robot.move2observation_pose(workspace_id)
 
 
+@mcp.tool
+def clear_collision_detected() -> None:
+    """
+    Reset the internal flag "collision_detected" of the Niryo robot. You need to call this after a
+    collision of the robot.
+
+    Returns:
+        None
+    """
+    robot.robot().robot_ctrl().clear_collison_detected()
+
+
 # OBJECTS TOOLS
 
 @mcp.tool
@@ -400,7 +412,7 @@ def speak(text: str) -> str:
     return f"Speaking: {text}"
 
 
-# python server/fastmcp_robot_server.py
+# python server/fastmcp_robot_server.py --no-simulation
 def main():
     """Main entry point when running as script."""
     parser = argparse.ArgumentParser(description="FastMCP Robot Server")
