@@ -65,7 +65,7 @@ class RobotMCPGUI:
         self.camera_thread = None
         
         # Initialize components
-        self.environment: Optional[Environment] = None
+        # self.environment: Optional[Environment] = None
         self.mcp_client: Optional[RobotFastMCPClient] = None
         self.speech2text: Optional[Speech2Text] = None
 
@@ -290,10 +290,14 @@ class RobotMCPGUI:
 
     async def process_user_input(self, user_input: str):
         """Process user input through MCP client."""
+        if not user_input or not user_input.strip():
+            yield self.chat_history
+            return
+
         if not self.mcp_client_connected:
             self._add_assistant_message("⚠️ MCP client not connected. Please wait for initialization.")
             yield self.chat_history
-            return  # Return without value
+            return
 
         # Add user message
         self._add_user_message(user_input)
@@ -306,8 +310,7 @@ class RobotMCPGUI:
         try:
             # Process through MCP client with tool call tracking
             async for _ in self._chat_with_tool_tracking(user_input):
-                # Yield updates during processing
-                yield self.chat_history
+                yield self.chat_history  # Yield after each update
 
         except Exception as e:
             error_msg = f"❌ Error: {str(e)}"
@@ -503,7 +506,10 @@ def create_gradio_interface(gui: RobotMCPGUI):
     }
     """
 
-    with gr.Blocks(css=css, title="Robot Control System") as demo:
+    with gr.Blocks(css=css, title="Robot Control System", analytics_enabled=False) as demo:
+        # Timer für periodische Updates
+        update_timer = gr.Timer(1)
+
         gr.Markdown("# 🤖 Robot Control System with MCP")
         gr.Markdown("Natural language control for pick-and-place robots using Model Context Protocol")
 
@@ -516,6 +522,7 @@ def create_gradio_interface(gui: RobotMCPGUI):
                 )
 
                 chatbot = gr.Chatbot(
+                    value=[],
                     type="messages",
                     height=500,
                     label="Robot Assistant"
@@ -525,7 +532,8 @@ def create_gradio_interface(gui: RobotMCPGUI):
                     msg = gr.Textbox(
                         placeholder="Enter your command here... (e.g., 'Pick up the red cube')",
                         label="Task Input",
-                        scale=4
+                        scale=4,
+                        lines=1
                     )
                     voice_btn = gr.Button("🎤 Voice", scale=1)
 
@@ -537,7 +545,7 @@ def create_gradio_interface(gui: RobotMCPGUI):
                     choices=example_tasks,
                     label="Example Tasks",
                     value=None,
-                    interactive=True
+                    # interactive=True
                 )
 
             # Right column: Camera feed
@@ -551,11 +559,11 @@ def create_gradio_interface(gui: RobotMCPGUI):
 
         # Event handlers
 
-        def user_submit(user_message, history):
+        def user_submit(user_message):
             """Handle user message submission."""
             if not user_message.strip():
-                return "", history
-            return "", history
+                return "", gui.chat_history
+            return "", gui.chat_history
 
         def clear_chat():
             """Clear chat history."""
@@ -564,56 +572,74 @@ def create_gradio_interface(gui: RobotMCPGUI):
 
         def select_example(example):
             """Handle example selection."""
-            return example
+            return example if example else ""
 
-        def update_camera():
-            """Update camera feed."""
-            return gui.get_current_frame()
+        def update_displays():
+            """Update camera feed and status."""
+            return gui.get_current_frame(), gui.get_status_html()
 
-        def update_status():
-            """Update status display."""
-            return gui.get_status_html()
-
-        async def handle_voice_input():
-            """Handle voice input button click."""
-            transcription = await asyncio.to_thread(gui.record_voice_input)
-            return transcription
+        def handle_voice_input_sync():
+            """Handle voice input button click (synchronous wrapper)."""
+            try:
+                return gui.record_voice_input()
+            except Exception as e:
+                print(f"Voice input error: {e}")
+                return ""
 
         # Wire up events
-        msg.submit(
-            user_submit,
-            [msg, chatbot],
-            [msg, chatbot],
-            queue=False
-        ).then(
-            gui.process_user_input,
-            msg,
-            chatbot
+        msg_submit = msg.submit(
+            fn=user_submit,
+            inputs=[msg],
+            outputs=[msg, chatbot],
+            api_name=False
         )
 
-        submit_btn.click(
-            user_submit,
-            [msg, chatbot],
-            [msg, chatbot],
-            queue=False
-        ).then(
-            gui.process_user_input,
-            msg,
-            chatbot
+        msg_submit.then(
+            fn=gui.process_user_input,
+            inputs=[msg],
+            outputs=[chatbot],
+            api_name=False
         )
 
-        clear_btn.click(clear_chat, None, [msg, chatbot], queue=False)
+        btn_click = submit_btn.click(
+            fn=user_submit,
+            inputs=[msg],
+            outputs=[msg, chatbot],
+            api_name=False
+        )
 
-        task_examples.change(select_example, task_examples, msg)
+        btn_click.then(
+            fn=gui.process_user_input,
+            inputs=[msg],
+            outputs=[chatbot],
+            api_name=False
+        )
 
-        voice_btn.click(handle_voice_input, None, msg)
+        clear_btn.click(
+            fn=clear_chat,
+            inputs=None,
+            outputs=[msg, chatbot],
+            api_name=False
+        )
 
-        # Periodic updates
-        demo.load(
-            lambda: (gui.get_current_frame(), gui.get_status_html()),
-            None,
-            [camera_display, status_display],
-            every=1
+        task_examples.change(
+            fn=select_example,
+            inputs=[task_examples],
+            outputs=[msg],
+            api_name=False
+        )
+
+        voice_btn.click(
+            fn=handle_voice_input_sync,
+            inputs=None,
+            outputs=[msg],
+            api_name=False
+        )
+
+        # Timer für automatische Updates
+        update_timer.tick(
+            fn=update_displays,
+            outputs=[camera_display, status_display]
         )
 
     return demo
