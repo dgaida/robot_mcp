@@ -52,6 +52,7 @@ class RobotMCPGUI:
             verbose: Enable verbose output
         """
         self.groq_api_key = groq_api_key
+        # TODO: elevenlabs api key not used anymore, only in mcp server
         self.elevenlabs_api_key = elevenlabs_api_key
         self.model = model
         self.robot_id = robot_id
@@ -111,7 +112,6 @@ class RobotMCPGUI:
 
             # Initialize speech recognition
             self.speech2text = Speech2Text(
-                el_api_key=self.elevenlabs_api_key,
                 device=device,
                 torch_dtype=torch_dtype,
                 use_whisper_mic=True,
