@@ -69,6 +69,7 @@ class RobotFastMCPClient:
         8. Provide clear feedback about what you're doing.
         9. If something fails, explain what went wrong.
         10. Always respond in English, even if the original input is in another language.
+        11. After you successfully completed a task, always call the tool move2observation_pose last.
 
         Location options for placement:
         - "left next to" - places object to the left
