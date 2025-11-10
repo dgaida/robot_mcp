@@ -1,110 +1,105 @@
-# MCP Robot Control System
+# Robot MCP Control System
 
-Natural language robot control using Model Context Protocol (MCP) and Groq's LLM API.
+Natural language robot control using **FastMCP** and Groq's LLM API.
 
-## 🎯 Quick Start (60 seconds)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 🎯 Overview
+
+Control robotic arms (Niryo Ned2, WidowX) through natural language using the Model Context Protocol (MCP) and large language models. Simply tell the robot what to do: *"Pick up the pencil and place it next to the red cube"*.
+
+## 🎯 How It Works
+
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐
+│             │  MCP    │              │  Robot  │             │
+│  Groq LLM   │◄───────►│  MCP Server  │◄───────►│   Niryo/    │
+│   Client    │Protocol │   (FastMCP)  │   API   │   WidowX    │
+│             │         │              │         │             │
+└─────────────┘         └──────────────┘         └─────────────┘
+      ▲                                                 │
+      │                                                 │
+      │ Natural Language                     Physical   │
+      │ Commands                             Actions    │
+      │                                                 │
+   ┌──┴──┐                                          ┌───▼───┐
+   │User │                                          │Objects│
+   └─────┘                                          └───────┘
+```
+
+### System Flow
+
+1. **User** speaks natural language: "Pick up the pencil"
+2. **Groq LLM** interprets command and decides which tools to call
+3. **MCP Client** sends tool calls to MCP server via SSE
+4. **MCP Server** executes robot commands
+5. **Robot** performs physical actions
+6. **Results** flow back to user through the chain
+
+## ✨ Key Features
+
+- 🤖 **Natural Language Control** - No programming required
+- 🔧 **Multi-Robot Support** - Niryo Ned2 and WidowX
+- 👁️ **Vision-Based Detection** - Automatic object detection and tracking
+- 🎨 **Gradio Web Interface** - User-friendly GUI with live camera feed
+- 🎤 **Voice Input** - Speak commands directly to the robot
+- 🔊 **Audio Feedback** - Robot speaks status updates
+- 🎯 **Spatial Reasoning** - Understands relative positions and arrangements
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.8+
+- Redis server
+- Niryo Ned2 or WidowX robot (or simulation)
+- Groq API key ([Get one free](https://console.groq.com/keys))
+
+### Installation
 
 ```bash
-# 1. Clone and navigate
+# Clone repository
+git clone https://github.com/dgaida/robot_mcp.git
 cd robot_mcp
 
-# 2. Run quick start script
-chmod +x quickstart_mcp.sh
-./quickstart_mcp.sh
-
-# 3. Follow the interactive menu
-# Choose option 3: "Run MCP client (interactive chat)"
-```
-
-## 📋 What's Included
-
-### Files Overview
-
-```
-robot_mcp/
-├── mcp_robot_server.py         # MCP server exposing robot tools
-├── mcp_groq_client.py          # Groq-powered MCP client
-├── mcp_server_launcher.py      # Utility launcher script
-├── examples_mcp_client.py      # Example scripts collection
-├── requirements.txt            # Python dependencies
-├── mcp_quickstart.sh           # Quick setup script
-└── README.md                   # This file
-```
-
-### Components
-
-1. **MCP Server** (`mcp_robot_server.py`)
-   - Exposes 12 robot control tools via MCP
-   - Runs as stdio server for MCP clients
-   - Works with Claude Desktop or custom clients
-
-2. **Groq Client** (`mcp_groq_client.py`)
-   - Interactive chat interface
-   - Uses Groq's fast LLM inference
-   - Automatic tool calling and execution
-   - Conversation history tracking
-
-3. **Launcher** (`mcp_server_launcher.py`)
-   - Unified command-line interface
-   - Test, run, configure, and inspect
-   - Supports both robots and simulation
-
-4. **Examples** (`examples_mcp_client.py`)
-   - 15 ready-to-run examples
-   - From simple scans to complex tasks
-   - Learning resource for new users
-
-## 🚀 Installation
-
-### Option 1: Quick Start Script (Recommended)
-
-```bash
-./mcp_quickstart.sh
-```
-
-The script will:
-- Check dependencies
-- Create virtual environment
-- Install packages
-- Prompt for Groq API key
-- Present interactive menu
-
-### Option 2: Manual Installation
-
-```bash
 # Create virtual environment
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install mcp groq
-pip install -e ".[all]"
+pip install -e .
 
-# Set API key
-export GROQ_API_KEY="your_groq_api_key"
+# Configure API keys
+cp secrets.env.template secrets.env
+# Edit secrets.env and add your GROQ_API_KEY
 ```
 
-### Get Groq API Key
+### Start Redis
 
-1. Visit https://console.groq.com/keys
-2. Sign up or log in
-3. Create new API key
-4. Copy and save securely
+```bash
+docker run -p 6379:6379 redis:alpine
+```
+
+### Quick Test
+
+```bash
+# Terminal 1: Start FastMCP Server
+python server/fastmcp_robot_server.py --robot niryo --no-simulation
+
+# Terminal 2: Run interactive client
+python -c "from client.fastmcp_groq_client import RobotFastMCPClient; import asyncio; asyncio.run(RobotFastMCPClient('your_groq_key').connect())"
+```
 
 ## 💻 Usage
 
-### 1. Interactive Chat Mode
-
-Talk to your robot in natural language:
+### Interactive Chat Mode
 
 ```bash
-python mcp_groq_client.py --robot niryo
-
-# With simulation
-python mcp_groq_client.py --robot niryo --simulation
+python fastmcp_main_client.py
 ```
 
-**Example Conversation:**
+Example conversation:
 
 ```
 You: What objects do you see?
@@ -119,709 +114,213 @@ You: Arrange all objects in a line
     spaced 8cm apart.
 ```
 
-### 2. Single Command Mode
-
-Execute one command:
+### Web GUI
 
 ```bash
-python mcp_groq_client.py \
-  --command "Pick up the pencil and place it at [0.2, 0.1]"
+# Launch GUI
+./launch_gui.sh  # Linux/Mac
+# or
+launch_gui.bat   # Windows
+
+# Options:
+./launch_gui.sh --robot widowx --real --share
 ```
 
-### 3. Run Examples
+### Programmatic Usage
 
-Try pre-built examples:
+```python
+from client.fastmcp_groq_client import RobotFastMCPClient
+import asyncio
 
-```bash
-# List all examples
-python examples_mcp_client.py --help
+async def demo():
+    client = RobotFastMCPClient(
+        groq_api_key="your_key",
+        model="moonshotai/kimi-k2-instruct-0905"
+    )
+    
+    await client.connect()
+    
+    # Natural language commands
+    await client.chat("What objects do you see?")
+    await client.chat("Pick up the largest object and place it in the center")
+    await client.chat("Sort all objects by size")
+    
+    await client.disconnect()
 
-# Run workspace scan
-python examples_mcp_client.py workspace_scan
-
-# Run with simulation
-python examples_mcp_client.py sort_by_size --simulation
-
-# Run all examples
-python examples_mcp_client.py all
-```
-
-### 4. Use with Claude Desktop
-
-Generate configuration:
-
-```bash
-python mcp_launcher.py config --output claude_config.json
-```
-
-Copy content to Claude Desktop config:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-Restart Claude Desktop and the tools will be available!
-
-### 5. Test Connection
-
-Before running examples, test your setup:
-
-```bash
-python mcp_launcher.py test --robot niryo
+asyncio.run(demo())
 ```
 
 ## 🛠️ Available Tools
 
-The MCP server exposes these tools to LLMs:
+The FastMCP server exposes these robot control tools:
 
 ### Robot Control
-- `pick_place_object` - Pick and place in one operation
+- `pick_place_object` - Complete pick and place operation
 - `pick_object` - Pick up an object
 - `place_object` - Place a held object
-- `push_object` - Push objects (for unpickable items)
-- `move_to_observation_pose` - Position for observation
+- `push_object` - Push objects (for items too large to grip)
+- `move2observation_pose` - Position for workspace observation
 
 ### Object Detection
-- `get_detected_objects` - List all objects
-- `get_object_at_location` - Find object at coordinates
-- `get_nearest_object` - Find closest object
-- `get_largest_object` - Get biggest object
-- `get_smallest_object` - Get smallest object
+- `get_detected_objects` - List all detected objects
+- `get_detected_object` - Find object at coordinates
+- `get_largest_detected_object` - Get biggest object
+- `get_smallest_detected_object` - Get smallest object
+- `get_detected_objects_sorted` - Sort objects by size
 
-### Information
-- `get_workspace_info` - Workspace dimensions
+### Workspace
+- `get_largest_free_space_with_center` - Find free space for placement
+- `get_workspace_coordinate_from_point` - Get corner/center coordinates
+- `get_object_labels_as_string` - List recognizable objects
+- `add_object_name2object_labels` - Add new object type
+
+### Feedback
 - `speak` - Text-to-speech output
 
 ## 📚 Example Tasks
 
-### Simple Tasks
-
-```python
-# Workspace scan
-"What objects do you see?"
-
-# Basic pick and place
-"Pick up the pencil and place it at [0.2, 0.1]"
-
-# Relative placement
-"Move the red cube to the left of the blue square"
-
-# Find objects
-"What's the largest object?"
-"What's near position [0.15, 0.0]?"
+### Simple Commands
 ```
-
-### Intermediate Tasks
-
-```python
-# Sorting
-"Sort all objects by size from smallest to largest"
-
-# Pattern creation
-"Arrange objects in a triangle"
-
-# Conditional logic
-"If there's a pencil, move it to [0.2, 0]. Otherwise, tell me what's available"
-
-# Grouping
-"Group objects by color: red on left, blue on right"
+"What objects do you see?"
+"Pick up the pencil and place it at [0.2, 0.1]"
+"Move the red cube to the left of the blue square"
+"Show me the largest object"
 ```
 
 ### Advanced Tasks
-
-```python
-# Multi-step operations
-"Execute: 1) Find all objects 2) Move smallest to [0.15, 0.1] 3) Move largest right of smallest 4) Report positions"
-
-# Complex reasoning
-"Organize the workspace: cubes on left, cylinders in middle, everything else on right, aligned in rows"
-
-# Error recovery
-"Try to pick up 'nonexistent'. If that fails, pick up any object and place it at [0.2, 0.0]"
+```
+"Sort all objects by size from smallest to largest"
+"Arrange objects in a triangle pattern"
+"Group objects by color: red on left, blue on right"
+"Swap positions of the two largest objects"
+"Pick all pens and place them next to the chocolate bar"
 ```
 
-## 🎮 Command Patterns
-
-### Object Queries
+### Complex Workflows
 ```
-"What objects..."
-"Show me all..."
-"Find the..."
-"Which object is..."
-"How many..."
+"Execute: 1) Find all objects 2) Move smallest to [0.15, 0.1] 
+3) Move largest right of smallest 4) Report positions"
+
+"Organize the workspace: cubes on left, cylinders in middle, 
+everything else on right, aligned in rows"
 ```
 
-### Pick and Place
-```
-"Pick up the [object] and place it..."
-"Move [object] to..."
-"Put [object] next to/above/below..."
-"Swap positions of..."
-```
+## 🎮 Gradio Web Interface
 
-### Spatial Reasoning
-```
-"Arrange in a [pattern]"
-"Sort by [criteria]"
-"Group by [attribute]"
-"Place at [coordinates]"
-"Stack [objects]"
+The web GUI provides:
+
+- 💬 **Chat Interface** - Natural language interaction
+- 📹 **Live Camera** - Real-time workspace view with object annotations
+- 🎤 **Voice Input** - Speak your commands
+- 📊 **System Status** - Connection and operation monitoring
+- 📝 **Example Tasks** - Quick-start templates
+
+Launch with:
+```bash
+python robot_gui/mcp_app.py --robot niryo
 ```
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-Create a `.env` file:
+Create `secrets.env`:
 
 ```bash
 GROQ_API_KEY=gsk_your_api_key_here
-ROBOT_ID=niryo
-USE_SIMULATION=false
-GROQ_MODEL=llama-3.3-70b-versatile
+ELEVENLABS_API_KEY=your_elevenlabs_key  # Optional for TTS
 ```
 
-Load with:
+### FastMCP Server Options
+
 ```bash
-export $(cat .env | xargs)
+python server/fastmcp_robot_server.py \
+  --robot niryo \              # or widowx
+  --no-simulation \            # Use real robot
+  --host 127.0.0.1 \
+  --port 8000 \
+  --verbose
 ```
 
 ### Groq Models
 
-Choose based on your needs:
-
 | Model | Speed | Quality | Best For |
 |-------|-------|---------|----------|
-| llama-3.3-70b-versatile | Fast | Excellent | General use (default) |
+| moonshotai/kimi-k2-instruct-0905 | Very Fast | Excellent | Default choice |
+| llama-3.3-70b-versatile | Fast | Excellent | Complex tasks |
 | llama-3.1-8b-instant | Very Fast | Good | Simple commands |
-| mixtral-8x7b-32768 | Fast | Very Good | Complex reasoning |
 
-Change model:
-```bash
-python mcp_groq_client.py --model llama-3.1-8b-instant
-```
+## 📖 Documentation
 
-### Server Configuration
+- **[Architecture Guide](docs/README.md)** - System design and data flow
+- **[API Reference](docs/api.md)** - Complete tool documentation
+- **[Examples](docs/examples.md)** - Common use cases
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues
 
-Customize server behavior in `mcp_robot_server.py`:
+## 🔧 Development
 
-```python
-# Modify system prompt
-self.system_prompt = """Your custom instructions..."""
-
-# Add custom tools
-@self.server.list_tools()
-async def list_tools() -> list[Tool]:
-    return [
-        # Add your custom tools here
-    ]
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### "Connection refused"
-
-**Cause**: MCP server not running or path incorrect
-
-**Solution**:
-```bash
-# Test server manually
-python mcp_robot_server.py niryo false
-
-# Check server path in client
-python mcp_groq_client.py --server /full/path/to/mcp_robot_server.py
-```
-
-#### "Invalid API key"
-
-**Cause**: Groq API key not set or incorrect
-
-**Solution**:
-```bash
-# Check if set
-echo $GROQ_API_KEY
-
-# Set temporarily
-export GROQ_API_KEY="gsk_your_key"
-
-# Or pass directly
-python mcp_groq_client.py --api-key "gsk_your_key"
-```
-
-#### "No objects detected"
-
-**Cause**: Robot not in observation pose or detection not initialized
-
-**Solution**:
-```bash
-# First command should always be:
-"Move to observation pose"
-# Then wait 2-3 seconds before querying objects
-```
-
-#### Robot doesn't move
-
-**Cause**: Simulation flag mismatch or robot not connected
-
-**Solution**:
-```bash
-# Check robot connection
-python mcp_server_launcher.py test --robot niryo
-
-# Verify simulation flag matches your setup
-python mcp_groq_client.py --robot niryo --simulation  # For sim
-python mcp_groq_client.py --robot niryo               # For real
-```
-
-#### Slow responses
-
-**Cause**: Large conversation history or slow model
-
-**Solutions**:
-```bash
-# In interactive mode, type:
-clear
-
-# Use faster model
-python mcp_groq_client.py --model llama-3.1-8b-instant
-
-# Single command mode (no history)
-python mcp_groq_client.py --command "your command"
-```
-
-### Debug Mode
-
-Enable verbose output:
+### Running Tests
 
 ```bash
-# Server side
-python mcp_robot_server.py niryo false  # verbose=True in code
-
-# Check logs
-tail -f robot_mcp_*.log
+pytest tests/
 ```
 
-## 📖 Advanced Usage
-
-### Custom Scripts
-
-Create your own automation:
-
-```python
-import asyncio
-from client.mcp_groq_client import RobotMCPClient
-
-async def my_task():
-    client = RobotMCPClient(
-        groq_api_key="your_key",
-        robot_id="niryo",
-        use_simulation=False
-    )
-    
-    await client.connect()
-    
-    # Your commands
-    await client.chat("What objects do you see?")
-    await client.chat("Sort them by size")
-    await client.chat("Create a triangle pattern")
-    
-    await client.disconnect()
-
-asyncio.run(my_task())
-```
-
-### Batch Processing
-
-Process multiple commands from a file:
-
-```python
-# commands.txt
-What objects do you see?
-Move the largest object to [0.2, 0.0]
-Arrange remaining objects in a line
-Report final positions
-```
-
-```python
-import asyncio
-from client.mcp_groq_client import RobotMCPClient
-
-async def batch_process(commands_file):
-    client = RobotMCPClient(groq_api_key="your_key")
-    await client.connect()
-    
-    with open(commands_file) as f:
-        for line in f:
-            command = line.strip()
-            if command and not command.startswith('#'):
-                print(f"Executing: {command}")
-                await client.chat(command)
-                await asyncio.sleep(2)
-    
-    await client.disconnect()
-
-asyncio.run(batch_process('commands.txt'))
-```
-
-### Integration with Other Systems
-
-```python
-# Example: Web API endpoint
-from fastapi import FastAPI
-from client.mcp_groq_client import RobotMCPClient
-
-app = FastAPI()
-client = None
-
-@app.on_event("startup")
-async def startup():
-    global client
-    client = RobotMCPClient(groq_api_key="your_key")
-    await client.connect()
-
-@app.post("/robot/command")
-async def execute_command(command: str):
-    response = await client.chat(command)
-    return {"response": response}
-
-@app.on_event("shutdown")
-async def shutdown():
-    await client.disconnect()
-```
-
-### Custom Tool Development
-
-Add your own tools to the MCP server:
-
-```python
-# In mcp_robot_server.py
-
-# 1. Add to list_tools()
-Tool(
-    name="custom_calibration",
-    description="Perform custom calibration routine",
-    inputSchema={
-        "type": "object",
-        "properties": {
-            "calibration_type": {
-                "type": "string",
-                "enum": ["full", "quick", "visual"]
-            }
-        },
-        "required": ["calibration_type"]
-    }
-)
-
-# 2. Add handler in call_tool()
-elif name == "custom_calibration":
-    cal_type = arguments["calibration_type"]
-    # Your calibration logic
-    result = perform_calibration(cal_type)
-    return [TextContent(
-        type="text",
-        text=f"Calibration complete: {result}"
-    )]
-```
-
-## 🔐 Security
-
-### API Key Security
+### Code Quality
 
 ```bash
-# Never commit API keys to git
-echo "GROQ_API_KEY=*" >> .gitignore
-echo ".env" >> .gitignore
-
-# Use environment variables
-export GROQ_API_KEY="your_key"
-
-# Or use a secrets manager
-# Example with AWS Secrets Manager
-aws secretsmanager get-secret-value --secret-id groq-api-key
+black .
+ruff check .
+mypy robot_mcp/
 ```
 
-### Workspace Safety
+### Adding New Tools
 
-Add boundary checking:
+1. Add tool definition in `server/fastmcp_robot_server.py`:
 
 ```python
-# In mcp_robot_server.py
-def validate_coordinates(x, y):
-    """Ensure coordinates are within safe bounds."""
-    if not (0.05 <= x <= 0.35 and -0.20 <= y <= 0.20):
-        raise ValueError(f"Coordinates [{x}, {y}] outside safe bounds")
+@mcp.tool
+def my_custom_tool(arg1: str, arg2: int) -> str:
+    """Tool description."""
+    result = # Your implementation
+    return result
 ```
 
-### Access Control
-
-Implement rate limiting and logging:
-
-```python
-import time
-from collections import defaultdict
-
-class RobotMCPServer:
-    def __init__(self, ...):
-        self.request_counts = defaultdict(int)
-        self.request_times = defaultdict(list)
-    
-    def check_rate_limit(self, user_id, max_requests=10, time_window=60):
-        """Rate limit: max_requests per time_window seconds."""
-        now = time.time()
-        times = self.request_times[user_id]
-        
-        # Remove old entries
-        times = [t for t in times if now - t < time_window]
-        
-        if len(times) >= max_requests:
-            raise Exception("Rate limit exceeded")
-        
-        times.append(now)
-        self.request_times[user_id] = times
-```
-
-## 📊 Monitoring and Logging
-
-### Operation Logging
-
-Track all robot operations:
-
-```python
-import logging
-import json
-from datetime import datetime
-
-logging.basicConfig(
-    filename=f'robot_ops_{datetime.now():%Y%m%d}.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
-def log_operation(tool_name, arguments, result, duration):
-    """Log each operation."""
-    log_entry = {
-        "timestamp": datetime.now().isoformat(),
-        "tool": tool_name,
-        "arguments": arguments,
-        "result": result,
-        "duration_ms": duration * 1000
-    }
-    logging.info(json.dumps(log_entry))
-```
-
-### See contents in Log File in Real-Time in Windows
-
-Open PowerShell and change to folder of robot_mcp package (cd).
-
-```bash
-Get-Content -Path mcp_server_*.log -Wait -Tail 0
-```
-
-### Performance Metrics
-
-Track system performance:
-
-```python
-class MetricsCollector:
-    def __init__(self):
-        self.metrics = {
-            "total_operations": 0,
-            "successful_operations": 0,
-            "failed_operations": 0,
-            "total_duration": 0,
-            "operations_by_type": {}
-        }
-    
-    def record_operation(self, tool_name, success, duration):
-        self.metrics["total_operations"] += 1
-        if success:
-            self.metrics["successful_operations"] += 1
-        else:
-            self.metrics["failed_operations"] += 1
-        self.metrics["total_duration"] += duration
-        
-        if tool_name not in self.metrics["operations_by_type"]:
-            self.metrics["operations_by_type"][tool_name] = 0
-        self.metrics["operations_by_type"][tool_name] += 1
-    
-    def get_report(self):
-        return {
-            "success_rate": self.metrics["successful_operations"] / 
-                          max(1, self.metrics["total_operations"]),
-            "avg_duration": self.metrics["total_duration"] / 
-                          max(1, self.metrics["total_operations"]),
-            "most_used_tool": max(
-                self.metrics["operations_by_type"].items(),
-                key=lambda x: x[1],
-                default=("none", 0)
-            )[0]
-        }
-```
-
-## 🧪 Testing
-
-### Unit Tests
-
-```python
-# test_mcp_client.py
-import pytest
-from mcp_groq_client import RobotMCPClient
-
-@pytest.mark.asyncio
-async def test_connection():
-    client = RobotMCPClient(
-        groq_api_key="test_key",
-        use_simulation=True
-    )
-    await client.connect()
-    assert len(client.available_tools) > 0
-    await client.disconnect()
-
-@pytest.mark.asyncio
-async def test_object_detection():
-    client = RobotMCPClient(groq_api_key="test_key")
-    await client.connect()
-    response = await client.chat("What objects do you see?")
-    assert "object" in response.lower()
-    await client.disconnect()
-```
-
-Run tests:
-```bash
-pytest test_mcp_client.py -v
-```
-
-### Integration Tests
-
-Test full workflows:
-
-```python
-# test_integration.py
-import asyncio
-from client.mcp_groq_client import RobotMCPClient
-
-async def test_full_workflow():
-    """Test complete pick and place workflow."""
-    client = RobotMCPClient(groq_api_key="your_key", use_simulation=True)
-    await client.connect()
-    
-    # Step 1: Detect objects
-    response1 = await client.chat("What objects do you see?")
-    assert "object" in response1.lower()
-    
-    # Step 2: Pick and place
-    response2 = await client.chat("Pick up the first object and place it at [0.2, 0.1]")
-    assert "success" in response2.lower() or "done" in response2.lower()
-    
-    # Step 3: Verify
-    response3 = await client.chat("What's at position [0.2, 0.1]?")
-    assert "object" in response3.lower()
-    
-    await client.disconnect()
-    print("✓ Full workflow test passed")
-
-if __name__ == "__main__":
-    asyncio.run(test_full_workflow())
-```
-
-## 🚀 Deployment
-
-### Production Deployment
-
-For production use:
-
-1. **Use Process Manager**
-```bash
-# Install supervisor
-sudo apt-get install supervisor
-
-# Create config: /etc/supervisor/conf.d/mcp_server.conf
-[program:mcp_server]
-command=/path/to/venv/bin/python /path/to/mcp_robot_server.py niryo false
-directory=/path/to/robot-environment
-user=robotuser
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/mcp_server.err.log
-stdout_logfile=/var/log/mcp_server.out.log
-```
-
-2. **Use Docker**
-```dockerfile
-FROM python:3.10-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-CMD ["python", "mcp_robot_server.py", "niryo", "false"]
-```
-
-3. **Environment Configuration**
-```bash
-# Use systemd for production
-sudo systemctl enable mcp-server
-sudo systemctl start mcp-server
-```
-
-## 📝 Best Practices
-
-### Command Design
-
-✅ **Good Commands:**
-- "Pick up the red cube and place it at [0.2, 0.1]"
-- "Find the largest object and move it to the center"
-- "Sort all objects by size, smallest to largest"
-
-❌ **Avoid:**
-- "Do something with that"
-- "Move it over there"
-- "Fix the workspace"
-
-### Error Handling
-
-Always provide fallback options:
-
-```python
-"If there's a pencil, move it to [0.2, 0]. 
-Otherwise, move any available object."
-```
-
-### Performance
-
-- Clear conversation history periodically
-- Use single command mode for scripts
-- Choose appropriate Groq model for task complexity
+2. The tool is automatically available to the LLM client
 
 ## 🤝 Contributing
 
 Contributions welcome! Please:
 
 1. Fork the repository
-2. Create feature branch
+2. Create a feature branch
 3. Add tests for new features
 4. Update documentation
-5. Submit pull request
+5. Submit a pull request
+
+## 📝 Notes
+
+**MCP vs FastMCP**: This repository now uses **FastMCP** exclusively. The older MCP implementation (stdio-based) is deprecated but still present in the codebase for reference.
+
+**Dependencies**: [Robot Environment](https://github.com/dgaida/robot_environment) and [Text2Speech](https://github.com/dgaida/text2speech) are automatically installed from GitHub as dependencies.
 
 ## 📄 License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 🆘 Support
+## 🙏 Acknowledgments
 
-- **Issues**: GitHub Issues
-- **Documentation**: See `/docs` folder
-- **Examples**: Run `python examples_mcp_client.py --help`
+- [Model Context Protocol](https://modelcontextprotocol.io) - Communication framework
+- [Groq](https://groq.com) - Fast LLM inference
+- [FastMCP](https://github.com/jlowin/fastmcp) - Modern MCP implementation
+- [Niryo Robotics](https://niryo.com) - Robot hardware
+- [OwlV2](https://huggingface.co/google/owlv2-base-patch16-ensemble) - Object detection
 
-## 🎓 Learning Resources
+## 📧 Contact
 
-- [MCP Documentation](https://modelcontextprotocol.io)
-- [Groq API Docs](https://console.groq.com/docs)
-- [Robot Environment README](README.md)
+Daniel Gaida - daniel.gaida@th-koeln.de
+
+Project Link: [https://github.com/dgaida/robot_mcp](https://github.com/dgaida/robot_mcp)
 
 ---
 
-Made with ❤️ for robotic automation
+*Made with ❤️ for robotic automation*

@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robot-mcp"
-version = "0.1.0"
-description = "Natural language robot control using Model Context Protocol (MCP) and LLM"
+version = "0.2.0"
+description = "Natural language robot control using FastMCP and Groq's LLM API"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "dgaida", email = "your.email@example.com"}
+    {name = "Daniel Gaida", email = "daniel.gaida@th-koeln.de"}
 ]
-keywords = ["robotics", "mcp", "llm", "groq", "pick-and-place", "fastmcp"]
+keywords = ["robotics", "mcp", "fastmcp", "llm", "groq", "pick-and-place", "natural-language"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -29,55 +29,18 @@ classifiers = [
 
 # Core dependencies
 dependencies = [
-    "numpy>=1.20.0",
-    "opencv-python>=4.5.0",
-    "torch>=2.0.0",
+    "fastmcp>=0.1.0",
+    "groq>=0.11.0",
     "python-dotenv>=1.0.0",
+    "robot-environment @ git+https://github.com/dgaida/robot_environment.git",
+    "text2speech @ git+https://github.com/dgaida/text2speech.git",
+    "speech2text @ git+https://github.com/dgaida/speech2text.git",
 ]
 
 [project.optional-dependencies]
-# MCP Server and Client dependencies
-mcp = [
-    "mcp>=0.9.0",
-    "fastmcp>=0.1.0",
-    "groq>=0.11.0",
-]
-
 # GUI dependencies
 gui = [
     "gradio>=4.0.0",
-    "sounddevice>=0.4.0",
-    "scipy>=1.9.0",
-    "whisper-mic>=1.0.0",
-]
-
-# Speech and communication
-speech = [
-    "sounddevice>=0.4.0",
-    "scipy>=1.9.0",
-    "whisper-mic>=1.0.0",
-    "transformers>=4.30.0",
-    # "elevenlabs>=0.2.0",  # Optional TTS
-]
-
-# Vision and detection
-vision = [
-    "ultralytics>=8.0.0",  # YOLO
-    "torchvision>=0.15.0",
-]
-
-# Robot hardware support
-niryo = [
-    # "pyniryo>=1.1.0",
-]
-
-widowx = [
-    # "interbotix-xs-modules>=0.1.0",
-]
-
-# Redis communication
-redis = [
-    "redis>=4.0.0",
 ]
 
 # Development dependencies
@@ -86,7 +49,7 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
-    "flake8>=6.0.0",
+    "ruff>=0.1.0",
     "mypy>=1.0.0",
     "isort>=5.12.0",
 ]
@@ -100,30 +63,27 @@ docs = [
 
 # All dependencies combined
 all = [
-    "robot-mcp[mcp,gui,speech,vision,redis,dev]",
+    "robot-mcp[gui,dev,docs]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/dgaida/robot-mcp"
-Documentation = "https://github.com/dgaida/robot-mcp/blob/main/README.md"
-Repository = "https://github.com/dgaida/robot-mcp"
-"Bug Tracker" = "https://github.com/dgaida/robot-mcp/issues"
+Homepage = "https://github.com/dgaida/robot_mcp"
+Documentation = "https://github.com/dgaida/robot_mcp/blob/main/README.md"
+Repository = "https://github.com/dgaida/robot_mcp"
+"Bug Tracker" = "https://github.com/dgaida/robot_mcp/issues"
 
 [project.scripts]
 # Command-line scripts
-robot-mcp-server = "server.mcp_robot_server:main"
-robot-mcp-client = "client.mcp_groq_client:main"
 robot-fastmcp-server = "server.fastmcp_robot_server:main"
 robot-fastmcp-client = "client.fastmcp_groq_client:main"
 robot-gui = "robot_gui.mcp_app:main"
-robot-launcher = "mcp_server_launcher:main"
-robot-examples = "examples_mcp_client:main"
+robot-examples = "fastmcp_main_client:main"
 
 [tool.setuptools]
 packages = ["client", "server", "robot_gui"]
 
 [tool.setuptools.package-data]
-"*" = ["*.md", "*.txt", "*.sh", "*.bat"]
+"*" = ["*.md", "*.txt", "*.sh", "*.bat", "*.env.template"]
 
 [tool.black]
 line-length = 100
@@ -143,6 +103,29 @@ extend-exclude = '''
   | __pycache__
 )/
 '''
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
 
 [tool.isort]
 profile = "black"
@@ -191,16 +174,3 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-
-[tool.flake8]
-max-line-length = 100
-extend-ignore = ["E203", "E266", "E501", "W503"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    ".venv",
-    "venv",
-]
-max-complexity = 10
