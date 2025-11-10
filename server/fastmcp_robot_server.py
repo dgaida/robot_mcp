@@ -5,6 +5,7 @@ import argparse
 from fastmcp import FastMCP
 from robot_environment import Environment
 from robot_environment.robot.robot_api import Location
+
 # from robot_environment.objects.object import Object
 
 # if TYPE_CHECKING:
@@ -16,14 +17,14 @@ from datetime import datetime
 
 
 # Configure logging to file (NOT to stdout/stderr!)
-log_filename = os.path.join('log', f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(log_filename),
         # DO NOT add StreamHandler - it would interfere with MCP communication
-    ]
+    ],
 )
 logger = logging.getLogger("FastMCPRobotServer")
 
@@ -39,8 +40,9 @@ env = None
 robot = None
 
 
-def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
-                           verbose=False, start_camera_thread=False):
+def initialize_environment(
+    el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False
+):
     """Initialize the robot environment with given parameters."""
     global env, robot
 
@@ -51,7 +53,7 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
         use_simulation=use_simulation,
         robot_id=robot_id,
         verbose=verbose,
-        start_camera_thread=start_camera_thread
+        start_camera_thread=start_camera_thread,
     )
     robot = env.robot()
 
@@ -59,6 +61,7 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 
 
 # ENVIRONMENT TOOLS
+
 
 @mcp.tool
 def get_largest_free_space_with_center() -> tuple[float, float, float]:
@@ -136,9 +139,14 @@ def add_object_name2object_labels(object_name: str) -> str:
 
 # ROBOT TOOLS
 
+
 @mcp.tool
-def pick_place_object(object_name: str, pick_coordinate: list[float], place_coordinate: list[float],
-                      location: Union[Location, str, None] = None) -> bool:
+def pick_place_object(
+    object_name: str,
+    pick_coordinate: list[float],
+    place_coordinate: list[float],
+    location: Union[Location, str, None] = None,
+) -> bool:
     """
     Command the pick-and-place robot arm to pick a specific object and place it using its gripper.
     The gripper will move to the specified 'pick_coordinate' and pick the named object. Then it will move to the
@@ -175,8 +183,12 @@ def pick_place_object(object_name: str, pick_coordinate: list[float], place_coor
     Returns:
         bool: Always returns `True` after the pick-and-place operation.
     """
-    return robot.pick_place_object(object_name=object_name, pick_coordinate=pick_coordinate,
-                                   place_coordinate=place_coordinate, location=location)
+    return robot.pick_place_object(
+        object_name=object_name,
+        pick_coordinate=pick_coordinate,
+        place_coordinate=place_coordinate,
+        location=location,
+    )
 
 
 @mcp.tool
@@ -276,9 +288,13 @@ def clear_collision_detected() -> None:
 
 # OBJECTS TOOLS
 
+
 @mcp.tool
-def get_detected_objects(location: Union[Location, str] = Location.NONE, coordinate: List[float] = None,
-                         label: Optional[str] = None) -> Optional[List[Dict]]:
+def get_detected_objects(
+    location: Union[Location, str] = Location.NONE,
+    coordinate: List[float] = None,
+    label: Optional[str] = None,
+) -> Optional[List[Dict]]:
     """
     Get list of objects detected by the camera in the workspace.
 
@@ -431,7 +447,7 @@ def main():
         use_simulation=not args.no_simulation,
         robot_id=args.robot,
         verbose=args.verbose,
-        start_camera_thread=not args.no_camera
+        start_camera_thread=not args.no_camera,
     )
 
     print("=" * 60)

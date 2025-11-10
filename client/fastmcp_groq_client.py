@@ -9,14 +9,14 @@ from fastmcp import Client
 from fastmcp.client.transports import SSETransport
 from groq import Groq
 from dotenv import load_dotenv
+
 # from redis_robot_comm import RedisMessageBroker
 
 import logging
 
 # Client can use stdout since it doesn't communicate via stdio
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("RobotMCPClient")
 
@@ -106,14 +106,16 @@ class RobotFastMCPClient:
         """Convert FastMCP tool definitions to Groq/OpenAI format."""
         tools = []
         for tool in self.available_tools:
-            tools.append({
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.inputSchema  # fastmcp liefert schon JSON schema
+            tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.inputSchema,  # fastmcp liefert schon JSON schema
+                    },
                 }
-            })
+            )
         return tools
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
@@ -137,10 +139,7 @@ class RobotFastMCPClient:
 
             # Extract text content from result
             if result.content:
-                text_results = [
-                    item.text for item in result.content
-                    if hasattr(item, 'text')
-                ]
+                text_results = [item.text for item in result.content if hasattr(item, "text")]
                 result_text = "\n".join(text_results)
                 print(f"✓ Result: {result_text}\n")
                 return result_text
@@ -177,12 +176,9 @@ class RobotFastMCPClient:
             result = await self.call_tool(tool_name, arguments)
 
             # Format result for Groq
-            tool_results.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": tool_name,
-                "content": result
-            })
+            tool_results.append(
+                {"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result}
+            )
 
         return tool_results
 
@@ -197,10 +193,7 @@ class RobotFastMCPClient:
             Assistant's response
         """
         # Add user message to history
-        self.conversation_history.append({
-            "role": "user",
-            "content": user_message
-        })
+        self.conversation_history.append({"role": "user", "content": user_message})
 
         max_iterations = 4  # 10  # Prevent infinite loops
         iteration = 0
@@ -213,8 +206,8 @@ class RobotFastMCPClient:
 
             # Prepare messages for Groq
             messages = [
-                           {"role": "system", "content": self.system_prompt}
-                       ] + self.conversation_history  # + objects_dict_list
+                {"role": "system", "content": self.system_prompt}
+            ] + self.conversation_history  # + objects_dict_list
 
             # print(messages)
 
@@ -226,7 +219,7 @@ class RobotFastMCPClient:
                     tools=self._convert_tools_to_groq_format(),
                     tool_choice="auto",
                     max_tokens=4096,
-                    temperature=0.7
+                    temperature=0.7,
                 )
 
                 assistant_message = response.choices[0].message
@@ -234,21 +227,23 @@ class RobotFastMCPClient:
                 # Check if the model wants to call tools
                 if assistant_message.tool_calls:
                     # Add assistant's tool call request to history
-                    self.conversation_history.append({
-                        "role": "assistant",
-                        "content": assistant_message.content or "",
-                        "tool_calls": [
-                            {
-                                "id": tc.id,
-                                "type": "function",
-                                "function": {
-                                    "name": tc.function.name,
-                                    "arguments": tc.function.arguments
+                    self.conversation_history.append(
+                        {
+                            "role": "assistant",
+                            "content": assistant_message.content or "",
+                            "tool_calls": [
+                                {
+                                    "id": tc.id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": tc.function.name,
+                                        "arguments": tc.function.arguments,
+                                    },
                                 }
-                            }
-                            for tc in assistant_message.tool_calls
-                        ]
-                    })
+                                for tc in assistant_message.tool_calls
+                            ],
+                        }
+                    )
 
                     # Process tool calls
                     tool_results = await self.process_tool_calls(assistant_message.tool_calls)
@@ -264,10 +259,9 @@ class RobotFastMCPClient:
                     final_response = assistant_message.content or "I completed the task."
 
                     # Add to history
-                    self.conversation_history.append({
-                        "role": "assistant",
-                        "content": final_response
-                    })
+                    self.conversation_history.append(
+                        {"role": "assistant", "content": final_response}
+                    )
 
                     return final_response
 
@@ -313,15 +307,15 @@ class RobotFastMCPClient:
                 if not user_input:
                     continue
 
-                if user_input.lower() in ['quit', 'exit', 'q']:
+                if user_input.lower() in ["quit", "exit", "q"]:
                     print("\n👋 Goodbye!")
                     break
 
-                if user_input.lower() == 'tools':
+                if user_input.lower() == "tools":
                     self.print_available_tools()
                     continue
 
-                if user_input.lower() == 'clear':
+                if user_input.lower() == "clear":
                     self.conversation_history = []
                     print("✓ Conversation history cleared.\n")
                     continue

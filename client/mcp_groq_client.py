@@ -30,26 +30,25 @@ import logging
 
 # Client can use stdout since it doesn't communicate via stdio
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("RobotMCPClient")
 
 
 class RobotMCPClient:
     """MCP Client that uses Groq LLM for robot control."""
-    
+
     def __init__(
         self,
         groq_api_key: str,
         model: str = "moonshotai/kimi-k2-instruct-0905",
         server_script_path: str = os.path.abspath(os.path.join("server", "mcp_robot_server.py")),
         robot_id: str = "niryo",
-        use_simulation: bool = False
+        use_simulation: bool = False,
     ):
         """
         Initialize the MCP client with Groq.
-        
+
         Args:
             groq_api_key: Groq API key
             model: Groq model to use (default: llama-3.3-70b-versatile)
@@ -62,12 +61,12 @@ class RobotMCPClient:
         self.server_script_path = server_script_path
         self.robot_id = robot_id
         self.use_simulation = use_simulation
-        
+
         self.session: Optional[ClientSession] = None
         self._context = None
         self.available_tools: List[Dict[str, Any]] = []
         self.conversation_history: List[Dict[str, str]] = []
-        
+
         # System prompt for the LLM
         self.system_prompt = """You are a helpful robot control assistant. You have access to various tools to control a robotic arm and detect objects in its workspace.
 
@@ -110,8 +109,8 @@ Always be precise and verify object positions before attempting to manipulate th
             args=[
                 self.server_script_path,
                 self.robot_id,
-                "true" if self.use_simulation else "false"
-            ]
+                "true" if self.use_simulation else "false",
+            ],
         )
 
         logger.debug(f"Server params: {server_params}")
@@ -156,8 +155,8 @@ Always be precise and verify object positions before attempting to manipulate th
                     "function": {
                         "name": tool.name,
                         "description": tool.description,
-                        "parameters": tool.inputSchema
-                    }
+                        "parameters": tool.inputSchema,
+                    },
                 }
                 for tool in tools_result.tools
             ]
@@ -183,7 +182,7 @@ Always be precise and verify object positions before attempting to manipulate th
             pass
 
         # Clean up the context manager
-        if hasattr(self, '_stdio_context') and self._stdio_context:
+        if hasattr(self, "_stdio_context") and self._stdio_context:
             try:
                 await self._stdio_context.__aexit__(None, None, None)
             except Exception as e:
@@ -198,32 +197,29 @@ Always be precise and verify object positions before attempting to manipulate th
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """
         Call a tool via MCP.
-        
+
         Args:
             tool_name: Name of the tool to call
             arguments: Tool arguments
-            
+
         Returns:
             Tool result as string
         """
         print(f"🔧 Calling tool: {tool_name}")
         print(f"   Arguments: {json.dumps(arguments, indent=2)}")
-        
+
         try:
             result = await self.session.call_tool(tool_name, arguments)
-            
+
             # Extract text content from result
             if result.content:
-                text_results = [
-                    item.text for item in result.content 
-                    if hasattr(item, 'text')
-                ]
+                text_results = [item.text for item in result.content if hasattr(item, "text")]
                 result_text = "\n".join(text_results)
                 print(f"✓ Result: {result_text}\n")
                 return result_text
             else:
                 return "Tool executed successfully (no output)"
-                
+
         except Exception as e:
             error_msg = f"Error calling tool {tool_name}: {str(e)}"
             print(f"✗ {error_msg}\n")
@@ -232,64 +228,58 @@ Always be precise and verify object positions before attempting to manipulate th
     async def process_tool_calls(self, tool_calls: List[Any]) -> List[Dict[str, Any]]:
         """
         Process tool calls from the LLM response.
-        
+
         Args:
             tool_calls: List of tool calls from LLM
-            
+
         Returns:
             List of tool results for the next LLM call
         """
         tool_results = []
-        
+
         for tool_call in tool_calls:
             tool_name = tool_call.function.name
-            
+
             # Parse arguments
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.JSONDecodeError:
                 arguments = {}
-            
+
             # Call the tool via MCP
             result = await self.call_tool(tool_name, arguments)
-            
+
             # Format result for Groq
-            tool_results.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": tool_name,
-                "content": result
-            })
-        
+            tool_results.append(
+                {"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result}
+            )
+
         return tool_results
 
     async def chat(self, user_message: str) -> str:
         """
         Process a user message and return the assistant's response.
-        
+
         Args:
             user_message: User's input message
-            
+
         Returns:
             Assistant's response
         """
         # Add user message to history
-        self.conversation_history.append({
-            "role": "user",
-            "content": user_message
-        })
-        
+        self.conversation_history.append({"role": "user", "content": user_message})
+
         max_iterations = 10  # Prevent infinite loops
         iteration = 0
-        
+
         while iteration < max_iterations:
             iteration += 1
-            
+
             # Prepare messages for Groq
             messages = [
                 {"role": "system", "content": self.system_prompt}
             ] + self.conversation_history
-            
+
             # Call Groq API
             try:
                 response = self.groq_client.chat.completions.create(
@@ -298,56 +288,57 @@ Always be precise and verify object positions before attempting to manipulate th
                     tools=self._convert_tools_to_groq_format(),
                     tool_choice="auto",
                     max_tokens=4096,
-                    temperature=0.7
+                    temperature=0.7,
                 )
-                
+
                 assistant_message = response.choices[0].message
-                
+
                 # Check if the model wants to call tools
                 if assistant_message.tool_calls:
                     # Add assistant's tool call request to history
-                    self.conversation_history.append({
-                        "role": "assistant",
-                        "content": assistant_message.content or "",
-                        "tool_calls": [
-                            {
-                                "id": tc.id,
-                                "type": "function",
-                                "function": {
-                                    "name": tc.function.name,
-                                    "arguments": tc.function.arguments
+                    self.conversation_history.append(
+                        {
+                            "role": "assistant",
+                            "content": assistant_message.content or "",
+                            "tool_calls": [
+                                {
+                                    "id": tc.id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": tc.function.name,
+                                        "arguments": tc.function.arguments,
+                                    },
                                 }
-                            }
-                            for tc in assistant_message.tool_calls
-                        ]
-                    })
-                    
+                                for tc in assistant_message.tool_calls
+                            ],
+                        }
+                    )
+
                     # Process tool calls
                     tool_results = await self.process_tool_calls(assistant_message.tool_calls)
-                    
+
                     # Add tool results to history
                     self.conversation_history.extend(tool_results)
-                    
+
                     # Continue loop to get final response
                     continue
-                    
+
                 else:
                     # No more tool calls, return final response
                     final_response = assistant_message.content or "I completed the task."
-                    
+
                     # Add to history
-                    self.conversation_history.append({
-                        "role": "assistant",
-                        "content": final_response
-                    })
-                    
+                    self.conversation_history.append(
+                        {"role": "assistant", "content": final_response}
+                    )
+
                     return final_response
-                    
+
             except Exception as e:
                 error_msg = f"Error calling Groq API: {str(e)}"
                 print(f"✗ {error_msg}")
                 return error_msg
-        
+
         return "Maximum iterations reached. Task may be incomplete."
 
     def print_available_tools(self):
@@ -362,9 +353,9 @@ Always be precise and verify object positions before attempting to manipulate th
 
     async def interactive_mode(self):
         """Run interactive chat mode."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🤖 ROBOT CONTROL ASSISTANT")
-        print("="*60)
+        print("=" * 60)
         print("\nType your commands in natural language.")
         print("Examples:")
         print("  - 'What objects do you see?'")
@@ -374,36 +365,36 @@ Always be precise and verify object positions before attempting to manipulate th
         print("\nType 'quit' or 'exit' to stop.")
         print("Type 'tools' to see available tools.")
         print("Type 'clear' to clear conversation history.")
-        print("="*60 + "\n")
-        
+        print("=" * 60 + "\n")
+
         while True:
             try:
                 user_input = input("You: ").strip()
-                
+
                 if not user_input:
                     continue
-                
-                if user_input.lower() in ['quit', 'exit', 'q']:
+
+                if user_input.lower() in ["quit", "exit", "q"]:
                     print("\n👋 Goodbye!")
                     break
-                
-                if user_input.lower() == 'tools':
+
+                if user_input.lower() == "tools":
                     self.print_available_tools()
                     continue
-                
-                if user_input.lower() == 'clear':
+
+                if user_input.lower() == "clear":
                     self.conversation_history = []
                     print("✓ Conversation history cleared.\n")
                     continue
-                
+
                 print()  # Empty line for readability
-                
+
                 # Process the message
                 response = await self.chat(user_input)
-                
+
                 print(f"\n🤖 Assistant: {response}\n")
                 print("-" * 60 + "\n")
-                
+
             except KeyboardInterrupt:
                 print("\n\n👋 Goodbye!")
                 break
@@ -413,10 +404,10 @@ Always be precise and verify object positions before attempting to manipulate th
     async def run_command(self, command: str) -> str:
         """
         Run a single command and return the response.
-        
+
         Args:
             command: Natural language command
-            
+
         Returns:
             Assistant's response
         """
@@ -451,39 +442,26 @@ Available Groq Models:
   - llama-3.1-70b-versatile
   - llama-3.1-8b-instant (faster, less capable)
   - mixtral-8x7b-32768
-        """
+        """,
     )
-    
-    parser.add_argument(
-        "--api-key",
-        help="Groq API key (or set GROQ_API_KEY env var)"
-    )
+
+    parser.add_argument("--api-key", help="Groq API key (or set GROQ_API_KEY env var)")
     parser.add_argument(
         "--model",
         default="llama-3.3-70b-versatile",
-        help="Groq model to use (default: llama-3.3-70b-versatile)"
+        help="Groq model to use (default: llama-3.3-70b-versatile)",
     )
     parser.add_argument(
         "--server",
         default="mcp_robot_server.py",
-        help="Path to MCP server script (default: mcp_robot_server.py)"
+        help="Path to MCP server script (default: mcp_robot_server.py)",
     )
     parser.add_argument(
-        "--robot",
-        choices=["niryo", "widowx"],
-        default="niryo",
-        help="Robot type (default: niryo)"
+        "--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type (default: niryo)"
     )
-    parser.add_argument(
-        "--simulation",
-        action="store_true",
-        help="Use simulation mode"
-    )
-    parser.add_argument(
-        "--command",
-        help="Single command to execute (non-interactive mode)"
-    )
-    
+    parser.add_argument("--simulation", action="store_true", help="Use simulation mode")
+    parser.add_argument("--command", help="Single command to execute (non-interactive mode)")
+
     args = parser.parse_args()
 
     load_dotenv(dotenv_path="secrets.env")
@@ -495,20 +473,20 @@ Available Groq Models:
         print("Set GROQ_API_KEY environment variable or use --api-key")
         print("\nGet your API key at: https://console.groq.com/keys")
         sys.exit(1)
-    
+
     # Create client
     client = RobotMCPClient(
         groq_api_key=api_key,
         model=args.model,
         server_script_path=args.server,
         robot_id=args.robot,
-        use_simulation=args.simulation
+        use_simulation=args.simulation,
     )
-    
+
     try:
         # Connect to MCP server
         await client.connect()
-        
+
         if args.command:
             # Single command mode
             print(f"You: {args.command}\n")
@@ -517,12 +495,13 @@ Available Groq Models:
         else:
             # Interactive mode
             await client.interactive_mode()
-            
+
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
     except Exception as e:
         print(f"\n✗ Error: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         await client.disconnect()

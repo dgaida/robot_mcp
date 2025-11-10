@@ -32,26 +32,31 @@ from datetime import datetime
 
 
 # Configure logging to file (NOT to stdout/stderr!)
-log_filename = os.path.join('log', f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(log_filename),
         # DO NOT add StreamHandler - it would interfere with MCP communication
-    ]
+    ],
 )
 logger = logging.getLogger("RobotMCPServer")
 
 
 class RobotMCPServer:
     """MCP Server wrapper for robot environment control."""
-    
-    def __init__(self, el_api_key: str, use_simulation: bool = False, 
-                 robot_id: str = "niryo", verbose: bool = True):
+
+    def __init__(
+        self,
+        el_api_key: str,
+        use_simulation: bool = False,
+        robot_id: str = "niryo",
+        verbose: bool = True,
+    ):
         """
         Initialize the robot MCP server.
-        
+
         Args:
             el_api_key: ElevenLabs API key for text-to-speech
             use_simulation: Whether to use simulation mode
@@ -66,7 +71,9 @@ class RobotMCPServer:
         logger.info(f"Log file: {log_filename}")
         logger.info("=" * 50)
 
-        self.env = Environment(el_api_key, use_simulation, robot_id, verbose=False, start_camera_thread=False)
+        self.env = Environment(
+            el_api_key, use_simulation, robot_id, verbose=False, start_camera_thread=False
+        )
         self.robot = self.env.robot()
         self.server = Server("robot-environment")
 
@@ -98,21 +105,21 @@ class RobotMCPServer:
                     "properties": {
                         "object_name": {
                             "type": "string",
-                            "description": "Name/label of the object to pick (e.g., 'pencil', 'red cube')"
+                            "description": "Name/label of the object to pick (e.g., 'pencil', 'red cube')",
                         },
                         "pick_coordinate": {
                             "type": "array",
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters where the object is located"
+                            "description": "World coordinates [x, y] in meters where the object is located",
                         },
                         "place_coordinate": {
                             "type": "array",
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters where to place the object"
+                            "description": "World coordinates [x, y] in meters where to place the object",
                         },
                         "location": {
                             "type": "string",
@@ -124,14 +131,14 @@ class RobotMCPServer:
                                 "on top of",
                                 "inside",
                                 "close to",
-                                "none"
+                                "none",
                             ],
                             "description": "Relative placement position to another object at place_coordinate",
-                            "default": "none"
-                        }
+                            "default": "none",
+                        },
                     },
-                    "required": ["object_name", "pick_coordinate", "place_coordinate"]
-                }
+                    "required": ["object_name", "pick_coordinate", "place_coordinate"],
+                },
             ),
             Tool(
                 name="pick_object",
@@ -145,18 +152,18 @@ class RobotMCPServer:
                     "properties": {
                         "object_name": {
                             "type": "string",
-                            "description": "Name/label of the object to pick"
+                            "description": "Name/label of the object to pick",
                         },
                         "pick_coordinate": {
                             "type": "array",
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters"
-                        }
+                            "description": "World coordinates [x, y] in meters",
+                        },
                     },
-                    "required": ["object_name", "pick_coordinate"]
-                }
+                    "required": ["object_name", "pick_coordinate"],
+                },
             ),
             Tool(
                 name="place_object",
@@ -173,7 +180,7 @@ class RobotMCPServer:
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters"
+                            "description": "World coordinates [x, y] in meters",
                         },
                         "location": {
                             "type": "string",
@@ -184,14 +191,14 @@ class RobotMCPServer:
                                 "below",
                                 "on top of",
                                 "inside",
-                                "none"
+                                "none",
                             ],
                             "description": "Relative placement position",
-                            "default": "none"
-                        }
+                            "default": "none",
+                        },
                     },
-                    "required": ["place_coordinate"]
-                }
+                    "required": ["place_coordinate"],
+                },
             ),
             Tool(
                 name="push_object",
@@ -205,28 +212,28 @@ class RobotMCPServer:
                     "properties": {
                         "object_name": {
                             "type": "string",
-                            "description": "Name/label of the object to push"
+                            "description": "Name/label of the object to push",
                         },
                         "push_coordinate": {
                             "type": "array",
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters where the object is located"
+                            "description": "World coordinates [x, y] in meters where the object is located",
                         },
                         "direction": {
                             "type": "string",
                             "enum": ["up", "down", "left", "right"],
-                            "description": "Direction to push the object"
+                            "description": "Direction to push the object",
                         },
                         "distance": {
                             "type": "number",
                             "description": "Distance to push in millimeters",
-                            "minimum": 0
-                        }
+                            "minimum": 0,
+                        },
                     },
-                    "required": ["object_name", "push_coordinate", "direction", "distance"]
-                }
+                    "required": ["object_name", "push_coordinate", "direction", "distance"],
+                },
             ),
             Tool(
                 name="move_to_observation_pose",
@@ -241,11 +248,11 @@ class RobotMCPServer:
                         "workspace_id": {
                             "type": "string",
                             "description": "ID of the workspace (e.g., 'niryo_ws', 'gazebo_1')",
-                            "default": "niryo_ws"
+                            "default": "niryo_ws",
                         }
                     },
-                    "required": ["workspace_id"]
-                }
+                    "required": ["workspace_id"],
+                },
             ),
             Tool(
                 name="get_detected_objects",
@@ -260,7 +267,7 @@ class RobotMCPServer:
                         "label_filter": {
                             "type": "string",
                             "description": "Optional: filter by object label/name",
-                            "default": None
+                            "default": None,
                         },
                         "location_filter": {
                             "type": "string",
@@ -270,10 +277,10 @@ class RobotMCPServer:
                                 "above",
                                 "below",
                                 "close to",
-                                "none"
+                                "none",
                             ],
                             "description": "Optional: filter by location relative to a coordinate",
-                            "default": "none"
+                            "default": "none",
                         },
                         "reference_coordinate": {
                             "type": "array",
@@ -281,10 +288,10 @@ class RobotMCPServer:
                             "minItems": 2,
                             "maxItems": 2,
                             "description": "Reference coordinate [x, y] for location filter",
-                            "default": None
-                        }
-                    }
-                }
+                            "default": None,
+                        },
+                    },
+                },
             ),
             Tool(
                 name="get_object_at_location",
@@ -301,16 +308,16 @@ class RobotMCPServer:
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters"
+                            "description": "World coordinates [x, y] in meters",
                         },
                         "label": {
                             "type": "string",
                             "description": "Optional: object label to match",
-                            "default": None
-                        }
+                            "default": None,
+                        },
                     },
-                    "required": ["coordinate"]
-                }
+                    "required": ["coordinate"],
+                },
             ),
             Tool(
                 name="get_nearest_object",
@@ -327,16 +334,16 @@ class RobotMCPServer:
                             "items": {"type": "number"},
                             "minItems": 2,
                             "maxItems": 2,
-                            "description": "World coordinates [x, y] in meters"
+                            "description": "World coordinates [x, y] in meters",
                         },
                         "label": {
                             "type": "string",
                             "description": "Optional: filter by object label",
-                            "default": None
-                        }
+                            "default": None,
+                        },
                     },
-                    "required": ["coordinate"]
-                }
+                    "required": ["coordinate"],
+                },
             ),
             Tool(
                 name="get_largest_object",
@@ -344,10 +351,7 @@ class RobotMCPServer:
                     "Find the largest object in the workspace by area. "
                     "Returns the object and its size in square centimeters."
                 ),
-                inputSchema={
-                    "type": "object",
-                    "properties": {}
-                }
+                inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
                 name="get_smallest_object",
@@ -355,10 +359,7 @@ class RobotMCPServer:
                     "Find the smallest object in the workspace by area. "
                     "Returns the object and its size in square centimeters."
                 ),
-                inputSchema={
-                    "type": "object",
-                    "properties": {}
-                }
+                inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
                 name="get_workspace_info",
@@ -373,15 +374,15 @@ class RobotMCPServer:
                         "workspace_id": {
                             "type": "string",
                             "description": "ID of the workspace",
-                            "default": None
+                            "default": None,
                         },
                         "workspace_index": {
                             "type": "integer",
                             "description": "Index of the workspace (0-based)",
-                            "default": 0
-                        }
-                    }
-                }
+                            "default": 0,
+                        },
+                    },
+                },
             ),
             Tool(
                 name="speak",
@@ -392,14 +393,11 @@ class RobotMCPServer:
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "text": {
-                            "type": "string",
-                            "description": "The text message to speak"
-                        }
+                        "text": {"type": "string", "description": "The text message to speak"}
                     },
-                    "required": ["text"]
-                }
-            )
+                    "required": ["text"],
+                },
+            ),
         ]
 
         logger.debug(f"Created {len(tools)} tool definitions")
@@ -427,7 +425,7 @@ class RobotMCPServer:
             logger.info("list_tools() called by client")
             logger.debug(f"Returning {len(self.available_tools)} tools")
             return self.available_tools
-        
+
         @self.server.call_tool()
         async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
             """Handle tool execution requests."""
@@ -440,74 +438,88 @@ class RobotMCPServer:
                         object_name=arguments["object_name"],
                         pick_coordinate=arguments["pick_coordinate"],
                         place_coordinate=arguments["place_coordinate"],
-                        location=arguments.get("location", "none")
+                        location=arguments.get("location", "none"),
                     )
-                    return [TextContent(
-                        type="text",
-                        text=f"Successfully picked '{arguments['object_name']}' from {arguments['pick_coordinate']} "
-                             f"and placed it at {arguments['place_coordinate']} ({arguments.get('location', 'none')})"
-                    )]
-                
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Successfully picked '{arguments['object_name']}' from {arguments['pick_coordinate']} "
+                            f"and placed it at {arguments['place_coordinate']} ({arguments.get('location', 'none')})",
+                        )
+                    ]
+
                 elif name == "pick_object":
                     result = self.robot.pick_object(
                         object_name=arguments["object_name"],
-                        pick_coordinate=arguments["pick_coordinate"]
+                        pick_coordinate=arguments["pick_coordinate"],
                     )
-                    return [TextContent(
-                        type="text",
-                        text=f"Successfully picked '{arguments['object_name']}' from {arguments['pick_coordinate']}"
-                    )]
-                
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Successfully picked '{arguments['object_name']}' from {arguments['pick_coordinate']}",
+                        )
+                    ]
+
                 elif name == "place_object":
                     result = self.robot.place_object(
                         place_coordinate=arguments["place_coordinate"],
-                        location=arguments.get("location", "none")
+                        location=arguments.get("location", "none"),
                     )
-                    return [TextContent(
-                        type="text",
-                        text=f"Successfully placed object at {arguments['place_coordinate']} "
-                             f"({arguments.get('location', 'none')})"
-                    )]
-                
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Successfully placed object at {arguments['place_coordinate']} "
+                            f"({arguments.get('location', 'none')})",
+                        )
+                    ]
+
                 elif name == "push_object":
                     result = self.robot.push_object(
                         object_name=arguments["object_name"],
                         push_coordinate=arguments["push_coordinate"],
                         direction=arguments["direction"],
-                        distance=arguments["distance"]
+                        distance=arguments["distance"],
                     )
-                    return [TextContent(
-                        type="text",
-                        text=f"Successfully pushed '{arguments['object_name']}' {arguments['direction']} "
-                             f"by {arguments['distance']}mm from {arguments['push_coordinate']}"
-                    )]
-                
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Successfully pushed '{arguments['object_name']}' {arguments['direction']} "
+                            f"by {arguments['distance']}mm from {arguments['push_coordinate']}",
+                        )
+                    ]
+
                 elif name == "move_to_observation_pose":
                     workspace_id = arguments.get("workspace_id", self.env.get_workspace_home_id())
                     self.env.robot_move2observation_pose(workspace_id)
-                    return [TextContent(
-                        type="text",
-                        text=f"Robot moved to observation pose for workspace '{workspace_id}'"
-                    )]
-                
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Robot moved to observation pose for workspace '{workspace_id}'",
+                        )
+                    ]
+
                 elif name == "get_detected_objects":
                     detected_objects = self.env.get_detected_objects()
-                    
+
                     # Apply filters if provided
                     label_filter = arguments.get("label_filter")
                     location_filter = arguments.get("location_filter", "none")
                     ref_coord = arguments.get("reference_coordinate")
-                    
+
                     if label_filter or location_filter != "none":
                         detected_objects = detected_objects.get_detected_objects(
-                            location=location_filter if location_filter != "none" else Location.NONE,
+                            location=(
+                                location_filter if location_filter != "none" else Location.NONE
+                            ),
                             coordinate=ref_coord,
-                            label=label_filter
+                            label=label_filter,
                         )
-                    
+
                     if len(detected_objects) == 0:
-                        return [TextContent(type="text", text="No objects detected in the workspace.")]
-                    
+                        return [
+                            TextContent(type="text", text="No objects detected in the workspace.")
+                        ]
+
                     # Format object information
                     object_info = []
                     for obj in detected_objects:
@@ -517,61 +529,69 @@ class RobotMCPServer:
                             "size": {
                                 "width_m": round(obj.width_m(), 3),
                                 "height_m": round(obj.height_m(), 3),
-                                "area_cm2": round(obj.size_m2() * 10000, 2)
+                                "area_cm2": round(obj.size_m2() * 10000, 2),
                             },
-                            "orientation_rad": round(obj.gripper_rotation(), 3)
+                            "orientation_rad": round(obj.gripper_rotation(), 3),
                         }
                         object_info.append(info)
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Detected {len(object_info)} object(s):\n\n" + 
-                             json.dumps(object_info, indent=2)
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Detected {len(object_info)} object(s):\n\n"
+                            + json.dumps(object_info, indent=2),
+                        )
+                    ]
+
                 elif name == "get_object_at_location":
                     coordinate = arguments["coordinate"]
                     label = arguments.get("label")
-                    
+
                     detected_objects = self.env.get_detected_objects()
                     obj = detected_objects.get_detected_object(coordinate, label)
-                    
+
                     if obj is None:
-                        return [TextContent(
-                            type="text",
-                            text=f"No object found at coordinate {coordinate}" + 
-                                 (f" with label '{label}'" if label else "")
-                        )]
-                    
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"No object found at coordinate {coordinate}"
+                                + (f" with label '{label}'" if label else ""),
+                            )
+                        ]
+
                     info = {
                         "label": obj.label(),
                         "position": {"x": round(obj.x_com(), 3), "y": round(obj.y_com(), 3)},
                         "size": {
                             "width_m": round(obj.width_m(), 3),
                             "height_m": round(obj.height_m(), 3),
-                            "area_cm2": round(obj.size_m2() * 10000, 2)
+                            "area_cm2": round(obj.size_m2() * 10000, 2),
                         },
-                        "orientation_rad": round(obj.gripper_rotation(), 3)
+                        "orientation_rad": round(obj.gripper_rotation(), 3),
                     }
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Object found:\n\n{json.dumps(info, indent=2)}"
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text", text=f"Object found:\n\n{json.dumps(info, indent=2)}"
+                        )
+                    ]
+
                 elif name == "get_nearest_object":
                     coordinate = arguments["coordinate"]
                     label = arguments.get("label")
-                    
+
                     detected_objects = self.env.get_detected_objects()
                     obj, distance = detected_objects.get_nearest_detected_object(coordinate, label)
-                    
+
                     if obj is None:
-                        return [TextContent(
-                            type="text",
-                            text=f"No objects found" + (f" with label '{label}'" if label else "")
-                        )]
-                    
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"No objects found"
+                                + (f" with label '{label}'" if label else ""),
+                            )
+                        ]
+
                     info = {
                         "label": obj.label(),
                         "position": {"x": round(obj.x_com(), 3), "y": round(obj.y_com(), 3)},
@@ -579,83 +599,86 @@ class RobotMCPServer:
                         "size": {
                             "width_m": round(obj.width_m(), 3),
                             "height_m": round(obj.height_m(), 3),
-                            "area_cm2": round(obj.size_m2() * 10000, 2)
-                        }
+                            "area_cm2": round(obj.size_m2() * 10000, 2),
+                        },
                     }
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Nearest object:\n\n{json.dumps(info, indent=2)}"
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text", text=f"Nearest object:\n\n{json.dumps(info, indent=2)}"
+                        )
+                    ]
+
                 elif name == "get_largest_object":
                     detected_objects = self.env.get_detected_objects()
-                    
+
                     if len(detected_objects) == 0:
                         return [TextContent(type="text", text="No objects detected.")]
-                    
+
                     obj, size = detected_objects.get_largest_detected_object()
-                    
+
                     info = {
                         "label": obj.label(),
                         "position": {"x": round(obj.x_com(), 3), "y": round(obj.y_com(), 3)},
                         "size": {
                             "width_m": round(obj.width_m(), 3),
                             "height_m": round(obj.height_m(), 3),
-                            "area_cm2": round(size * 10000, 2)
-                        }
+                            "area_cm2": round(size * 10000, 2),
+                        },
                     }
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Largest object:\n\n{json.dumps(info, indent=2)}"
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text", text=f"Largest object:\n\n{json.dumps(info, indent=2)}"
+                        )
+                    ]
+
                 elif name == "get_smallest_object":
                     detected_objects = self.env.get_detected_objects()
-                    
+
                     if len(detected_objects) == 0:
                         return [TextContent(type="text", text="No objects detected.")]
-                    
+
                     obj, size = detected_objects.get_smallest_detected_object()
-                    
+
                     info = {
                         "label": obj.label(),
                         "position": {"x": round(obj.x_com(), 3), "y": round(obj.y_com(), 3)},
                         "size": {
                             "width_m": round(obj.width_m(), 3),
                             "height_m": round(obj.height_m(), 3),
-                            "area_cm2": round(size * 10000, 2)
-                        }
+                            "area_cm2": round(size * 10000, 2),
+                        },
                     }
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Smallest object:\n\n{json.dumps(info, indent=2)}"
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text", text=f"Smallest object:\n\n{json.dumps(info, indent=2)}"
+                        )
+                    ]
+
                 elif name == "get_workspace_info":
                     workspace_id = arguments.get("workspace_id")
                     workspace_index = arguments.get("workspace_index", 0)
-                    
+
                     if workspace_id:
                         workspace = self.env.get_workspace_by_id(workspace_id)
                     else:
                         workspace = self.env.get_workspace(workspace_index)
-                    
+
                     if workspace is None:
                         return [TextContent(type="text", text="Workspace not found.")]
-                    
+
                     info = {
                         "id": workspace.id(),
                         "dimensions": {
                             "width_m": round(workspace.width_m(), 3),
-                            "height_m": round(workspace.height_m(), 3)
+                            "height_m": round(workspace.height_m(), 3),
                         },
                         "center_position": {
                             "x": round(workspace.xy_center_wc().x, 3),
                             "y": round(workspace.xy_center_wc().y, 3),
-                            "z": round(workspace.xy_center_wc().z, 3)
+                            "z": round(workspace.xy_center_wc().z, 3),
                         },
                         "observation_pose": {
                             "x": round(workspace.observation_pose().x, 3),
@@ -663,36 +686,29 @@ class RobotMCPServer:
                             "z": round(workspace.observation_pose().z, 3),
                             "roll": round(workspace.observation_pose().roll, 3),
                             "pitch": round(workspace.observation_pose().pitch, 3),
-                            "yaw": round(workspace.observation_pose().yaw, 3)
-                        }
+                            "yaw": round(workspace.observation_pose().yaw, 3),
+                        },
                     }
-                    
-                    return [TextContent(
-                        type="text",
-                        text=f"Workspace information:\n\n{json.dumps(info, indent=2)}"
-                    )]
-                
+
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Workspace information:\n\n{json.dumps(info, indent=2)}",
+                        )
+                    ]
+
                 elif name == "speak":
                     text = arguments["text"]
                     thread = self.env.oralcom_call_text2speech_async(text)
                     # Don't wait for speech to complete
-                    return [TextContent(
-                        type="text",
-                        text=f"Speaking: '{text}'"
-                    )]
-                
+                    return [TextContent(type="text", text=f"Speaking: '{text}'")]
+
                 else:
-                    return [TextContent(
-                        type="text",
-                        text=f"Unknown tool: {name}"
-                    )]
-                    
+                    return [TextContent(type="text", text=f"Unknown tool: {name}")]
+
             except Exception as e:
                 logger.error(f"Error executing tool {name}: {e}", exc_info=True)
-                return [TextContent(
-                    type="text",
-                    text=f"Error executing {name}: {str(e)}"
-                )]
+                return [TextContent(type="text", text=f"Error executing {name}: {str(e)}")]
 
         logger.debug("MCP handlers registered successfully")
 
@@ -710,9 +726,7 @@ class RobotMCPServer:
                 # Server mit den Streams starten
                 logger.info("Starting server.run()...")
                 await self.server.run(
-                    read_stream,
-                    write_stream,
-                    self.server.create_initialization_options()
+                    read_stream, write_stream, self.server.create_initialization_options()
                 )
                 logger.info("server.run() completed")
 
@@ -724,15 +738,15 @@ class RobotMCPServer:
 async def main():
     """Main entry point for the MCP server."""
     import sys
-    
+
     # Configuration - you can modify these or read from environment variables
     config = {
         "el_api_key": "",  # Your ElevenLabs API key (empty string to use Kokoro)
         "use_simulation": True,  # Set to True for Gazebo simulation
         "robot_id": "niryo",  # "niryo" or "widowx"
-        "verbose": True
+        "verbose": True,
     }
-    
+
     # Override from command line arguments if provided
     if len(sys.argv) > 1:
         config["robot_id"] = sys.argv[1]
