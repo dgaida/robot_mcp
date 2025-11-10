@@ -223,6 +223,7 @@ models/
 *.h5
 *.pkl
 *.ckpt
+alt/
 
 # Secrets and credentials
 *.key
@@ -232,6 +233,7 @@ secrets.yml
 credentials.json
 .env.local
 .env.*.local
+*.env
 
 # Temporary files
 *.tmp
