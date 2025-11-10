@@ -14,22 +14,20 @@ Usage:
 
 import asyncio
 import json
-from typing import Any, Sequence
+import logging
 import os
+import sys
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Sequence
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import TextContent, Tool
 
 # Import robot environment components
 from robot_environment import Environment  # , Objects
 from robot_environment.robot.robot_api import Location
-
-import logging
-import sys
-from datetime import datetime
-
 
 # Configure logging to file (NOT to stdout/stderr!)
 log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
@@ -71,9 +69,7 @@ class RobotMCPServer:
         logger.info(f"Log file: {log_filename}")
         logger.info("=" * 50)
 
-        self.env = Environment(
-            el_api_key, use_simulation, robot_id, verbose=False, start_camera_thread=False
-        )
+        self.env = Environment(el_api_key, use_simulation, robot_id, verbose=False, start_camera_thread=False)
         self.robot = self.env.robot()
         self.server = Server("robot-environment")
 
@@ -392,9 +388,7 @@ class RobotMCPServer:
                 ),
                 inputSchema={
                     "type": "object",
-                    "properties": {
-                        "text": {"type": "string", "description": "The text message to speak"}
-                    },
+                    "properties": {"text": {"type": "string", "description": "The text message to speak"}},
                     "required": ["text"],
                 },
             ),
@@ -434,7 +428,7 @@ class RobotMCPServer:
 
             try:
                 if name == "pick_place_object":
-                    result = self.robot.pick_place_object(
+                    self.robot.pick_place_object(
                         object_name=arguments["object_name"],
                         pick_coordinate=arguments["pick_coordinate"],
                         place_coordinate=arguments["place_coordinate"],
@@ -449,7 +443,7 @@ class RobotMCPServer:
                     ]
 
                 elif name == "pick_object":
-                    result = self.robot.pick_object(
+                    self.robot.pick_object(
                         object_name=arguments["object_name"],
                         pick_coordinate=arguments["pick_coordinate"],
                     )
@@ -461,7 +455,7 @@ class RobotMCPServer:
                     ]
 
                 elif name == "place_object":
-                    result = self.robot.place_object(
+                    self.robot.place_object(
                         place_coordinate=arguments["place_coordinate"],
                         location=arguments.get("location", "none"),
                     )
@@ -474,7 +468,7 @@ class RobotMCPServer:
                     ]
 
                 elif name == "push_object":
-                    result = self.robot.push_object(
+                    self.robot.push_object(
                         object_name=arguments["object_name"],
                         push_coordinate=arguments["push_coordinate"],
                         direction=arguments["direction"],
@@ -508,17 +502,13 @@ class RobotMCPServer:
 
                     if label_filter or location_filter != "none":
                         detected_objects = detected_objects.get_detected_objects(
-                            location=(
-                                location_filter if location_filter != "none" else Location.NONE
-                            ),
+                            location=(location_filter if location_filter != "none" else Location.NONE),
                             coordinate=ref_coord,
                             label=label_filter,
                         )
 
                     if len(detected_objects) == 0:
-                        return [
-                            TextContent(type="text", text="No objects detected in the workspace.")
-                        ]
+                        return [TextContent(type="text", text="No objects detected in the workspace.")]
 
                     # Format object information
                     object_info = []
@@ -538,8 +528,7 @@ class RobotMCPServer:
                     return [
                         TextContent(
                             type="text",
-                            text=f"Detected {len(object_info)} object(s):\n\n"
-                            + json.dumps(object_info, indent=2),
+                            text=f"Detected {len(object_info)} object(s):\n\n" + json.dumps(object_info, indent=2),
                         )
                     ]
 
@@ -570,11 +559,7 @@ class RobotMCPServer:
                         "orientation_rad": round(obj.gripper_rotation(), 3),
                     }
 
-                    return [
-                        TextContent(
-                            type="text", text=f"Object found:\n\n{json.dumps(info, indent=2)}"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"Object found:\n\n{json.dumps(info, indent=2)}")]
 
                 elif name == "get_nearest_object":
                     coordinate = arguments["coordinate"]
@@ -587,8 +572,7 @@ class RobotMCPServer:
                         return [
                             TextContent(
                                 type="text",
-                                text=f"No objects found"
-                                + (f" with label '{label}'" if label else ""),
+                                text="No objects found" + (f" with label '{label}'" if label else ""),
                             )
                         ]
 
@@ -603,11 +587,7 @@ class RobotMCPServer:
                         },
                     }
 
-                    return [
-                        TextContent(
-                            type="text", text=f"Nearest object:\n\n{json.dumps(info, indent=2)}"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"Nearest object:\n\n{json.dumps(info, indent=2)}")]
 
                 elif name == "get_largest_object":
                     detected_objects = self.env.get_detected_objects()
@@ -627,11 +607,7 @@ class RobotMCPServer:
                         },
                     }
 
-                    return [
-                        TextContent(
-                            type="text", text=f"Largest object:\n\n{json.dumps(info, indent=2)}"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"Largest object:\n\n{json.dumps(info, indent=2)}")]
 
                 elif name == "get_smallest_object":
                     detected_objects = self.env.get_detected_objects()
@@ -651,11 +627,7 @@ class RobotMCPServer:
                         },
                     }
 
-                    return [
-                        TextContent(
-                            type="text", text=f"Smallest object:\n\n{json.dumps(info, indent=2)}"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"Smallest object:\n\n{json.dumps(info, indent=2)}")]
 
                 elif name == "get_workspace_info":
                     workspace_id = arguments.get("workspace_id")
@@ -700,6 +672,7 @@ class RobotMCPServer:
                 elif name == "speak":
                     text = arguments["text"]
                     thread = self.env.oralcom_call_text2speech_async(text)
+                    print(thread)
                     # Don't wait for speech to complete
                     return [TextContent(type="text", text=f"Speaking: '{text}'")]
 
@@ -725,9 +698,7 @@ class RobotMCPServer:
 
                 # Server mit den Streams starten
                 logger.info("Starting server.run()...")
-                await self.server.run(
-                    read_stream, write_stream, self.server.create_initialization_options()
-                )
+                await self.server.run(read_stream, write_stream, self.server.create_initialization_options())
                 logger.info("server.run() completed")
 
         except Exception as e:

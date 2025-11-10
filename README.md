@@ -108,14 +108,14 @@ Example conversation:
 
 ```
 You: What objects do you see?
-🤖: I can see 3 objects: a pencil at [0.15, -0.05], 
+🤖: I can see 3 objects: a pencil at [0.15, -0.05],
     a red cube at [0.20, 0.10], and a blue square at [0.18, -0.10]
 
 You: Move the pencil next to the red cube
 🤖: Done! I've placed the pencil to the right of the red cube.
 
 You: Arrange all objects in a line
-🤖: All objects are now arranged in a horizontal line, 
+🤖: All objects are now arranged in a horizontal line,
     spaced 8cm apart.
 ```
 
@@ -142,14 +142,14 @@ async def demo():
         groq_api_key="your_key",
         model="moonshotai/kimi-k2-instruct-0905"
     )
-    
+
     await client.connect()
-    
+
     # Natural language commands
     await client.chat("What objects do you see?")
     await client.chat("Pick up the largest object and place it in the center")
     await client.chat("Sort all objects by size")
-    
+
     await client.disconnect()
 
 asyncio.run(demo())
@@ -203,10 +203,10 @@ The FastMCP server exposes these robot control tools:
 
 ### Complex Workflows
 ```
-"Execute: 1) Find all objects 2) Move smallest to [0.15, 0.1] 
+"Execute: 1) Find all objects 2) Move smallest to [0.15, 0.1]
 3) Move largest right of smallest 4) Report positions"
 
-"Organize the workspace: cubes on left, cylinders in middle, 
+"Organize the workspace: cubes on left, cylinders in middle,
 everything else on right, aligned in rows"
 ```
 

@@ -86,7 +86,7 @@ packages = ["client", "server", "robot_gui"]
 "*" = ["*.md", "*.txt", "*.sh", "*.bat", "*.env.template"]
 
 [tool.black]
-line-length = 100
+line-length = 127
 target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 extend-exclude = '''
@@ -105,7 +105,7 @@ extend-exclude = '''
 '''
 
 [tool.ruff]
-line-length = 100
+line-length = 127
 target-version = "py38"
 
 [tool.ruff.lint]
@@ -129,7 +129,7 @@ ignore = [
 
 [tool.isort]
 profile = "black"
-line_length = 100
+line_length = 127
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0

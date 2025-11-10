@@ -15,8 +15,10 @@ Examples:
 import asyncio
 import os
 import sys
-from client.fastmcp_groq_client import RobotFastMCPClient
+
 from dotenv import load_dotenv
+
+from client.fastmcp_groq_client import RobotFastMCPClient
 
 
 class RobotExamples:
@@ -176,8 +178,7 @@ class RobotExamples:
     async def conditional_logic(self):
         """Use conditional logic in commands."""
         commands = [
-            "If there's a pencil in the workspace, move it to [0.2, 0.0]. "
-            "If not, tell me what objects are available.",
+            "If there's a pencil in the workspace, move it to [0.2, 0.0]. " "If not, tell me what objects are available.",
             "Check if there are more than 3 objects. "
             "If yes, arrange them in a square pattern. "
             "If no, arrange them in a line.",
@@ -361,7 +362,7 @@ Examples:
 
         if args.example == "all":
             # Run all examples
-            for name, (func, desc) in example_map.items():
+            for _name, (func, desc) in example_map.items():
                 await examples.run_example(func, desc)
                 await asyncio.sleep(3)  # Pause between examples
         elif args.example in example_map:

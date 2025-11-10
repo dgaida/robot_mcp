@@ -1,20 +1,17 @@
 # fastmcp_robot_server.py
-from typing import Optional, List, Union, Dict
 import argparse
+
+# from robot_environment.objects.object import Object
+# if TYPE_CHECKING:
+#     from robot_environment.robot.robot_api import Location
+import logging
+import os
+from datetime import datetime
+from typing import Dict, List, Optional, Union
 
 from fastmcp import FastMCP
 from robot_environment import Environment
 from robot_environment.robot.robot_api import Location
-
-# from robot_environment.objects.object import Object
-
-# if TYPE_CHECKING:
-#     from robot_environment.robot.robot_api import Location
-
-import logging
-import os
-from datetime import datetime
-
 
 # Configure logging to file (NOT to stdout/stderr!)
 log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
@@ -40,9 +37,7 @@ env = None
 robot = None
 
 
-def initialize_environment(
-    el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False
-):
+def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False):
     """Initialize the robot environment with given parameters."""
     global env, robot
 

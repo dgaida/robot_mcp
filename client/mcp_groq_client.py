@@ -16,22 +16,18 @@ Set environment variable:
 
 import asyncio
 import json
+import logging
 import os
 import sys
-from typing import Optional, List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from groq import Groq
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from groq import Groq
-
-import logging
-
 # Client can use stdout since it doesn't communicate via stdio
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("RobotMCPClient")
 
 
@@ -114,7 +110,7 @@ Always be precise and verify object positions before attempting to manipulate th
         )
 
         logger.debug(f"Server params: {server_params}")
-        print(f"🤖 Connecting to MCP server...")
+        print("🤖 Connecting to MCP server...")
         print(f"   Robot: {self.robot_id}")
         print(f"   Simulation: {self.use_simulation}")
         print(f"   path2server: {self.server_script_path}")
@@ -166,7 +162,7 @@ Always be precise and verify object positions before attempting to manipulate th
             logger.info(f"✓ Connected! Found {len(self.available_tools)} tools\n")
 
         except asyncio.TimeoutError as e:
-            logger.error("Connection timed out - server not responding")
+            logger.error(f"Connection timed out - server not responding: {e}")
             print("✗ Connection timed out - check server logs")
             raise
         except Exception as e:
@@ -250,9 +246,7 @@ Always be precise and verify object positions before attempting to manipulate th
             result = await self.call_tool(tool_name, arguments)
 
             # Format result for Groq
-            tool_results.append(
-                {"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result}
-            )
+            tool_results.append({"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result})
 
         return tool_results
 
@@ -276,9 +270,7 @@ Always be precise and verify object positions before attempting to manipulate th
             iteration += 1
 
             # Prepare messages for Groq
-            messages = [
-                {"role": "system", "content": self.system_prompt}
-            ] + self.conversation_history
+            messages = [{"role": "system", "content": self.system_prompt}] + self.conversation_history
 
             # Call Groq API
             try:
@@ -328,9 +320,7 @@ Always be precise and verify object positions before attempting to manipulate th
                     final_response = assistant_message.content or "I completed the task."
 
                     # Add to history
-                    self.conversation_history.append(
-                        {"role": "assistant", "content": final_response}
-                    )
+                    self.conversation_history.append({"role": "assistant", "content": final_response})
 
                     return final_response
 
@@ -418,6 +408,7 @@ Always be precise and verify object positions before attempting to manipulate th
 async def main():
     """Main entry point."""
     import argparse
+
     from dotenv import load_dotenv
 
     parser = argparse.ArgumentParser(
@@ -427,13 +418,13 @@ async def main():
 Examples:
   # Interactive mode with real robot
   python mcp_groq_client.py --robot niryo
-  
+
   # Interactive mode with simulation
   python mcp_groq_client.py --robot niryo --simulation
-  
+
   # Single command
   python mcp_groq_client.py --command "What objects do you see?"
-  
+
   # Different Groq model
   python mcp_groq_client.py --model llama-3.1-70b-versatile
 
@@ -456,9 +447,7 @@ Available Groq Models:
         default="mcp_robot_server.py",
         help="Path to MCP server script (default: mcp_robot_server.py)",
     )
-    parser.add_argument(
-        "--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type (default: niryo)"
-    )
+    parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type (default: niryo)")
     parser.add_argument("--simulation", action="store_true", help="Use simulation mode")
     parser.add_argument("--command", help="Single command to execute (non-interactive mode)")
 

@@ -15,6 +15,7 @@ Examples:
 import asyncio
 import os
 import sys
+
 from client.mcp_groq_client import RobotMCPClient
 
 
@@ -22,9 +23,7 @@ class RobotExamples:
     """Collection of robot control examples."""
 
     def __init__(self, api_key: str, robot_id: str = "niryo", use_simulation: bool = False):
-        self.client = RobotMCPClient(
-            groq_api_key=api_key, robot_id=robot_id, use_simulation=use_simulation
-        )
+        self.client = RobotMCPClient(groq_api_key=api_key, robot_id=robot_id, use_simulation=use_simulation)
 
     async def connect(self):
         """Connect to the MCP server."""
@@ -177,8 +176,7 @@ class RobotExamples:
     async def conditional_logic(self):
         """Use conditional logic in commands."""
         commands = [
-            "If there's a pencil in the workspace, move it to [0.2, 0.0]. "
-            "If not, tell me what objects are available.",
+            "If there's a pencil in the workspace, move it to [0.2, 0.0]. " "If not, tell me what objects are available.",
             "Check if there are more than 3 objects. "
             "If yes, arrange them in a square pattern. "
             "If no, arrange them in a line.",
@@ -317,9 +315,7 @@ Examples:
         help="Example to run (default: workspace_scan)",
     )
     parser.add_argument("--api-key", help="Groq API key (or set GROQ_API_KEY env var)")
-    parser.add_argument(
-        "--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type (default: niryo)"
-    )
+    parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type (default: niryo)")
     parser.add_argument("--simulation", action="store_true", help="Use simulation mode")
 
     args = parser.parse_args()
@@ -358,7 +354,7 @@ Examples:
 
         if args.example == "all":
             # Run all examples
-            for name, (func, desc) in example_map.items():
+            for _name, (func, desc) in example_map.items():
                 await examples.run_example(func, desc)
                 await asyncio.sleep(3)  # Pause between examples
         elif args.example in example_map:

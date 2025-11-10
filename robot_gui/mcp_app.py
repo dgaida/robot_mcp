@@ -10,10 +10,10 @@ import os
 import sys
 import threading
 import time
-from pathlib import Path
-from typing import Optional, List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from queue import Queue
+from typing import Any, Dict, Optional
 
 import gradio as gr
 import torch
@@ -23,9 +23,10 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # TODO: macht eigentlich keinen Sinn speech2text in robot_environment zu haben, sollte besser in diesem package sein
-from robot_environment.speech2text import Speech2Text
-from client.fastmcp_groq_client import RobotFastMCPClient
 from redis_robot_comm import RedisImageStreamer
+from robot_environment.speech2text import Speech2Text
+
+from client.fastmcp_groq_client import RobotFastMCPClient
 
 
 class RobotMCPGUI:
@@ -111,9 +112,7 @@ class RobotMCPGUI:
             # )
 
             # Initialize speech recognition
-            self.speech2text = Speech2Text(
-                device=device, torch_dtype=torch_dtype, use_whisper_mic=True, verbose=self.verbose
-            )
+            self.speech2text = Speech2Text(device=device, torch_dtype=torch_dtype, use_whisper_mic=True, verbose=self.verbose)
 
             # Start camera updates
             self._start_camera_updates()
@@ -181,9 +180,7 @@ class RobotMCPGUI:
             if self.verbose:
                 cmd.append("--verbose")
 
-            self.server_process = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
+            self.server_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             # Wait for server to start and check if it's actually running
             print("Waiting for server to initialize...")
@@ -194,13 +191,13 @@ class RobotMCPGUI:
 
             try:
                 async with httpx.AsyncClient() as client:
-                    response = await client.get("http://127.0.0.1:8000/sse", timeout=5.0)
+                    await client.get("http://127.0.0.1:8000/sse", timeout=5.0)
                     # Server antwortet
                     self.mcp_server_running = True
                     print("✓ MCP server started and responding")
                     self._add_system_message("🟢 MCP Server started")
                     return True
-            except:
+            except Exception:
                 # Check if process is still running
                 if self.server_process.poll() is None:
                     self.mcp_server_running = True
@@ -274,9 +271,7 @@ class RobotMCPGUI:
     def _add_tool_call_message(self, tool_name: str, arguments: Dict[str, Any]):
         """Add a tool call notification to chat history."""
         args_str = ", ".join([f"{k}={v}" for k, v in arguments.items()])
-        self.chat_history.append(
-            {"role": "assistant", "content": f"🔧 **Calling tool:** `{tool_name}({args_str})`"}
-        )
+        self.chat_history.append({"role": "assistant", "content": f"🔧 **Calling tool:** `{tool_name}({args_str})`"})
 
     async def process_user_input(self, user_input: str):
         """Process user input through MCP client."""
@@ -285,9 +280,7 @@ class RobotMCPGUI:
             return
 
         if not self.mcp_client_connected:
-            self._add_assistant_message(
-                "⚠️ MCP client not connected. Please wait for initialization."
-            )
+            self._add_assistant_message("⚠️ MCP client not connected. Please wait for initialization.")
             yield self.chat_history
             return
 
@@ -324,9 +317,7 @@ class RobotMCPGUI:
             iteration += 1
 
             # Prepare messages
-            messages = [
-                {"role": "system", "content": self.mcp_client.system_prompt}
-            ] + self.mcp_client.conversation_history
+            messages = [{"role": "system", "content": self.mcp_client.system_prompt}] + self.mcp_client.conversation_history
 
             # Call Groq API
             response = self.mcp_client.groq_client.chat.completions.create(
@@ -367,16 +358,14 @@ class RobotMCPGUI:
 
                     try:
                         arguments = json.loads(tc.function.arguments)
-                    except:
+                    except Exception:
                         arguments = {}
 
                     self._add_tool_call_message(tc.function.name, arguments)
                     yield  # Update GUI
 
                 # Process tool calls
-                tool_results = await self.mcp_client.process_tool_calls(
-                    assistant_message.tool_calls
-                )
+                tool_results = await self.mcp_client.process_tool_calls(assistant_message.tool_calls)
 
                 # Add tool results to history
                 self.mcp_client.conversation_history.extend(tool_results)
@@ -386,9 +375,7 @@ class RobotMCPGUI:
                 # No more tool calls, update with final response
                 final_response = assistant_message.content or "Task completed."
 
-                self.mcp_client.conversation_history.append(
-                    {"role": "assistant", "content": final_response}
-                )
+                self.mcp_client.conversation_history.append({"role": "assistant", "content": final_response})
 
                 # Update last message with final response
                 self.chat_history[-1]["content"] = f"🤖 {final_response}"
@@ -457,7 +444,7 @@ class RobotMCPGUI:
         if self.mcp_client:
             try:
                 asyncio.run(self.mcp_client.disconnect())
-            except:
+            except Exception:
                 pass
 
         # Stop MCP server
@@ -505,9 +492,7 @@ def create_gradio_interface(gui: RobotMCPGUI):
         update_timer = gr.Timer(1)
 
         gr.Markdown("# 🤖 Robot Control System with MCP")
-        gr.Markdown(
-            "Natural language control for pick-and-place robots using Model Context Protocol"
-        )
+        gr.Markdown("Natural language control for pick-and-place robots using Model Context Protocol")
 
         with gr.Row():
             # Left column: Chat interface
@@ -538,9 +523,7 @@ def create_gradio_interface(gui: RobotMCPGUI):
 
             # Right column: Camera feed
             with gr.Column(scale=1):
-                camera_display = gr.Image(
-                    type="numpy", label="Live Camera View", height=500, elem_classes=["camera-feed"]
-                )
+                camera_display = gr.Image(type="numpy", label="Live Camera View", height=500, elem_classes=["camera-feed"])
 
         # Event handlers
 
@@ -572,23 +555,17 @@ def create_gradio_interface(gui: RobotMCPGUI):
                 return ""
 
         # Wire up events
-        msg_submit = msg.submit(
-            fn=user_submit, inputs=[msg], outputs=[msg, chatbot], api_name=False
-        )
+        msg_submit = msg.submit(fn=user_submit, inputs=[msg], outputs=[msg, chatbot], api_name=False)
 
         msg_submit.then(fn=gui.process_user_input, inputs=[msg], outputs=[chatbot], api_name=False)
 
-        btn_click = submit_btn.click(
-            fn=user_submit, inputs=[msg], outputs=[msg, chatbot], api_name=False
-        )
+        btn_click = submit_btn.click(fn=user_submit, inputs=[msg], outputs=[msg, chatbot], api_name=False)
 
         btn_click.then(fn=gui.process_user_input, inputs=[msg], outputs=[chatbot], api_name=False)
 
         clear_btn.click(fn=clear_chat, inputs=None, outputs=[msg, chatbot], api_name=False)
 
-        task_examples.change(
-            fn=select_example, inputs=[task_examples], outputs=[msg], api_name=False
-        )
+        task_examples.change(fn=select_example, inputs=[task_examples], outputs=[msg], api_name=False)
 
         voice_btn.click(fn=handle_voice_input_sync, inputs=None, outputs=[msg], api_name=False)
 
@@ -605,9 +582,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Robot Control GUI with MCP")
     parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo", help="Robot type")
     parser.add_argument("--no-simulation", action="store_true", help="Use real robot")
-    parser.add_argument(
-        "--model", default="moonshotai/kimi-k2-instruct-0905", help="Groq model to use"
-    )
+    parser.add_argument("--model", default="moonshotai/kimi-k2-instruct-0905", help="Groq model to use")
     parser.add_argument("--share", action="store_true", help="Create public Gradio link")
 
     args = parser.parse_args()

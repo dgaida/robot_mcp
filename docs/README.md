@@ -94,14 +94,14 @@ mcp = FastMCP("robot-environment")
 
 @mcp.tool
 def pick_place_object(
-    object_name: str, 
+    object_name: str,
     pick_coordinate: list[float],
     place_coordinate: list[float],
     location: Union[Location, str, None] = None
 ) -> bool:
     """Pick and place an object."""
     return robot.pick_place_object(
-        object_name, pick_coordinate, 
+        object_name, pick_coordinate,
         place_coordinate, location
     )
 ```
@@ -155,16 +155,16 @@ RobotMCPGUI
 ```
 1. USER INPUT
    User: "Pick up the pencil and place it next to the red cube"
-   
+
 2. LLM PROCESSING
    Groq LLM:
    ├─ Parses natural language
    ├─ Decides: Need to detect objects first
    └─ Generates tool calls
-   
+
 3. TOOL EXECUTION
    MCP Client → MCP Server:
-   
+
    Call 1: get_detected_objects()
    ├─ Environment.get_detected_objects()
    ├─ Returns: [
@@ -172,7 +172,7 @@ RobotMCPGUI
    │    {label: "red cube", position: [0.20, 0.10]}
    │  ]
    └─ Result sent back to LLM
-   
+
    Call 2: pick_place_object(
       object_name="pencil",
       pick_coordinate=[0.15, -0.05],
@@ -183,13 +183,13 @@ RobotMCPGUI
    ├─ RobotController executes motion
    ├─ Physical robot moves
    └─ Returns: True (success)
-   
+
 4. LLM RESPONSE
    Groq LLM:
    ├─ Synthesizes results
-   └─ Generates: "Done! I've placed the pencil to the right 
+   └─ Generates: "Done! I've placed the pencil to the right
                   of the red cube."
-   
+
 5. USER FEEDBACK
    GUI/Console: Displays response
    TTS (optional): Speaks response
@@ -231,12 +231,12 @@ def get_detected_objects(
 ) -> Optional[List[Dict]]:
     """
     Get list of detected objects with optional filters.
-    
+
     Args:
         location: Spatial filter (left/right/above/below/close to)
         coordinate: Reference coordinate for location filter
         label: Filter by object label
-    
+
     Returns:
         List of detected objects with positions and dimensions
     """
@@ -258,7 +258,7 @@ def main():
         verbose=True,
         start_camera_thread=True
     )
-    
+
     # Start server
     mcp.run(transport="sse", host="127.0.0.1", port=8000)
 ```
@@ -472,24 +472,24 @@ def stack_objects(
 ) -> str:
     """
     Stack one object on top of another.
-    
+
     Args:
         bottom_object: Label of base object
         top_object: Label of object to place on top
-    
+
     Returns:
         Success message
     """
     # Get detected objects
     detected = env.get_detected_objects()
-    
+
     # Find objects
     bottom = detected.get_detected_object_by_label(bottom_object)
     top = detected.get_detected_object_by_label(top_object)
-    
+
     if not bottom or not top:
         return f"Could not find objects"
-    
+
     # Execute stacking
     success = robot.pick_place_object(
         object_name=top.label(),
@@ -497,7 +497,7 @@ def stack_objects(
         place_coordinate=[bottom.x_com(), bottom.y_com()],
         location=Location.ON_TOP_OF
     )
-    
+
     return f"Stacked {top_object} on {bottom_object}"
 ```
 
@@ -508,13 +508,13 @@ async def process_batch_commands(commands: List[str]):
     """Execute multiple commands sequentially."""
     client = RobotFastMCPClient(groq_api_key="key")
     await client.connect()
-    
+
     results = []
     for cmd in commands:
         response = await client.chat(cmd)
         results.append(response)
         await asyncio.sleep(1)  # Pause between commands
-    
+
     await client.disconnect()
     return results
 
@@ -536,12 +536,12 @@ async def smart_placement():
     """Find best placement location automatically."""
     client = RobotFastMCPClient(groq_api_key="key")
     await client.connect()
-    
+
     # LLM will use get_largest_free_space_with_center tool
     response = await client.chat(
         "Find the largest free space and place the pencil there"
     )
-    
+
     await client.disconnect()
     return response
 ```
@@ -607,11 +607,11 @@ class MyRobotController(RobotController):
     def __init__(self, robot_ip, verbose):
         super().__init__(robot_ip, verbose)
         # Initialize your robot's API
-        
+
     def robot_pick_object(self, obj: Object) -> bool:
         # Implement pick logic
         pass
-        
+
     def robot_place_object(self, pose: PoseObjectPNP) -> bool:
         # Implement place logic
         pass
@@ -647,13 +647,13 @@ def get_objects_in_region(
 ) -> List[Dict]:
     """Get all objects within a rectangular region."""
     detected = env.get_detected_objects()
-    
+
     filtered = [
         obj for obj in detected
         if (x_min <= obj.x_com() <= x_max and
             y_min <= obj.y_com() <= y_max)
     ]
-    
+
     return [obj.to_dict() for obj in filtered]
 ```
 
@@ -665,12 +665,12 @@ See [docs/troubleshooting.md](troubleshooting.md) for common issues and solution
 
 The Robot MCP system provides:
 
-✅ **Modern Architecture** - FastMCP with HTTP/SSE transport  
-✅ **Natural Language** - Groq LLM for command interpretation  
-✅ **Vision Integration** - Real-time object detection  
-✅ **Multi-Robot Support** - Hardware abstraction layer  
-✅ **Web Interface** - User-friendly Gradio GUI  
-✅ **Extensible Design** - Easy to add tools and robots  
+✅ **Modern Architecture** - FastMCP with HTTP/SSE transport
+✅ **Natural Language** - Groq LLM for command interpretation
+✅ **Vision Integration** - Real-time object detection
+✅ **Multi-Robot Support** - Hardware abstraction layer
+✅ **Web Interface** - User-friendly Gradio GUI
+✅ **Extensible Design** - Easy to add tools and robots
 ✅ **Production Ready** - Error handling and logging
 
 For more information, see:

@@ -36,14 +36,14 @@ print_banner() {
 # Check dependencies
 check_dependencies() {
     print_message "$YELLOW" "Checking dependencies..."
-    
+
     # Check Python
     if ! command -v python3 &> /dev/null; then
         print_message "$RED" "✗ Python 3 not found"
         exit 1
     fi
     print_message "$GREEN" "✓ Python 3 found: $(python3 --version)"
-    
+
     # Check required packages
     local packages=("gradio" "torch" "fastmcp" "groq")
     for package in "${packages[@]}"; do
@@ -55,14 +55,14 @@ check_dependencies() {
             exit 1
         fi
     done
-    
+
     echo ""
 }
 
 # Check API keys
 check_api_keys() {
     print_message "$YELLOW" "Checking API keys..."
-    
+
     # Check for secrets.env file
     if [ ! -f "secrets.env" ]; then
         print_message "$RED" "✗ secrets.env not found"
@@ -74,16 +74,16 @@ EOF
         print_message "$YELLOW" "  Please edit secrets.env and add your API keys"
         exit 1
     fi
-    
+
     # Source and check GROQ_API_KEY
     source secrets.env
-    
+
     if [ -z "$GROQ_API_KEY" ] || [ "$GROQ_API_KEY" = "your_groq_api_key_here" ]; then
         print_message "$RED" "✗ GROQ_API_KEY not set in secrets.env"
         exit 1
     fi
     print_message "$GREEN" "✓ GROQ_API_KEY found"
-    
+
     echo ""
 }
 
@@ -154,22 +154,22 @@ EOF
 launch_gui() {
     print_message "$GREEN" "🚀 Launching Robot Control GUI..."
     echo ""
-    
+
     # Build command
     local cmd="python3 robot_gui/mcp_app.py --robot $ROBOT --model $MODEL"
-    
+
     if [ "$SIMULATION" = false ]; then
         cmd="$cmd --no-simulation"
     fi
-    
+
     if [ "$SHARE" = true ]; then
         cmd="$cmd --share"
     fi
-    
+
     # Execute
     print_message "$YELLOW" "Command: $cmd"
     echo ""
-    
+
     $cmd
 }
 
@@ -177,30 +177,30 @@ launch_gui() {
 cleanup() {
     echo ""
     print_message "$YELLOW" "Shutting down..."
-    
+
     # Kill any remaining processes
     pkill -f "main_server.py" 2>/dev/null || true
-    
+
     print_message "$GREEN" "✓ Cleanup complete"
 }
 
 # Main
 main() {
     print_banner
-    
+
     # Parse command line arguments
     parse_args "$@"
-    
+
     # Check dependencies and API keys
     check_dependencies
     check_api_keys
-    
+
     # Show configuration
     show_config
-    
+
     # Set up cleanup trap
     trap cleanup EXIT INT TERM
-    
+
     # Launch GUI
     launch_gui
 }

@@ -1,23 +1,20 @@
 # fastmcp_groq_client.py
 
 import asyncio
-import os
 import json
-from typing import List, Dict, Any
 
+# from redis_robot_comm import RedisMessageBroker
+import logging
+import os
+from typing import Any, Dict, List
+
+from dotenv import load_dotenv
 from fastmcp import Client
 from fastmcp.client.transports import SSETransport
 from groq import Groq
-from dotenv import load_dotenv
-
-# from redis_robot_comm import RedisMessageBroker
-
-import logging
 
 # Client can use stdout since it doesn't communicate via stdio
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("RobotMCPClient")
 
 
@@ -41,15 +38,15 @@ class RobotFastMCPClient:
         2. The robot has a gripper-mounted camera that captures images of its workspace.
         3. Detected objects are described along with their (x,y) world coordinates (center of the object) and their size in meters.
         4. **World Coordinate System**:
-           - The world coordinate system is Cartesian, anchored at the base of the robot arm. 
+           - The world coordinate system is Cartesian, anchored at the base of the robot arm.
            - The x-axis is the vertical axis. The values on the x-axis increase from bottom to top.
            - The y-axis is the horizontal axis. The values on the y-axis increase from right to left. The y-axis origin (0.0) is in the center of the workspace.
            - The coordinate values of both axes are measured in meters.
         5. **Workspace**:
            - The upper left corner of the workspace has the world coordinates (0.337, 0.087).
            - The lower right corner of the workspace has the world coordinates (0.163, -0.087).
-           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a negative y-coordinate are located on the right side of the workspace. 
-           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a positive y-coordinate are located on the left side of the workspace. 
+           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a negative y-coordinate are located on the right side of the workspace.
+           - Because the y-axis origin is in the center of the workspace and the values increase from right to left, objects with a positive y-coordinate are located on the left side of the workspace.
 
         Key capabilities:
         - Pick and place objects using coordinates
@@ -59,10 +56,10 @@ class RobotFastMCPClient:
 
         When the user asks you to do something:
         1. If the user's task is in a language other than English, translate it into English first.
-        2. Use the available tools to accomplish the task. 
-        3. Always call get_detected_objects first to understand what's in the workspace. 
-        Do this before each pick or place command, as the objects may change their positions. 
-        4. Use exact coordinates from detected objects for pick and place operations. 
+        2. Use the available tools to accomplish the task.
+        3. Always call get_detected_objects first to understand what's in the workspace.
+        Do this before each pick or place command, as the objects may change their positions.
+        4. Use exact coordinates from detected objects for pick and place operations.
         5. Double-check object locations when dealing with multiple similar objects.
         6. Make sure that the names of the objects passed to the tools ('object_name') match the names returned by get_detected_objects EXACTLY.
         7. Adhere strictly to the specified tool call format to avoid execution errors.
@@ -176,9 +173,7 @@ class RobotFastMCPClient:
             result = await self.call_tool(tool_name, arguments)
 
             # Format result for Groq
-            tool_results.append(
-                {"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result}
-            )
+            tool_results.append({"role": "tool", "tool_call_id": tool_call.id, "name": tool_name, "content": result})
 
         return tool_results
 
@@ -205,9 +200,7 @@ class RobotFastMCPClient:
             # objects_dict_list = self._broker.get_latest_objects(10)
 
             # Prepare messages for Groq
-            messages = [
-                {"role": "system", "content": self.system_prompt}
-            ] + self.conversation_history  # + objects_dict_list
+            messages = [{"role": "system", "content": self.system_prompt}] + self.conversation_history  # + objects_dict_list
 
             # print(messages)
 
@@ -259,9 +252,7 @@ class RobotFastMCPClient:
                     final_response = assistant_message.content or "I completed the task."
 
                     # Add to history
-                    self.conversation_history.append(
-                        {"role": "assistant", "content": final_response}
-                    )
+                    self.conversation_history.append({"role": "assistant", "content": final_response})
 
                     return final_response
 
