@@ -12,6 +12,8 @@ git+https://github.com/dgaida/text2speech.git
 
 git+https://github.com/dgaida/speech2text.git
 
+git+https://github.com/dgaida/redis_robot_comm.git
+
 # GUI dependencies
 gradio>=4.0.0
 
