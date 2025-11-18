@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robot-mcp"
-version = "0.2.0"
-description = "Natural language robot control using FastMCP and Groq's LLM API"
+version = "0.3.0"
+description = "Natural language robot control using FastMCP with multi-LLM support (OpenAI, Groq, Gemini, Ollama)"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "Daniel Gaida", email = "daniel.gaida@th-koeln.de"}
 ]
-keywords = ["robotics", "mcp", "fastmcp", "llm", "groq", "pick-and-place", "natural-language"]
+keywords = ["robotics", "mcp", "fastmcp", "llm", "groq", "openai", "gemini", "ollama", "pick-and-place", "natural-language"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -27,10 +27,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Robotics",
 ]
 
-# Core dependencies
+# Core dependencies - Multi-LLM support
 dependencies = [
     "fastmcp>=0.1.0",
-    "groq>=0.11.0",
+    "llm_client @ git+https://github.com/dgaida/llm_client.git",
     "python-dotenv>=1.0.0",
     "robot-environment @ git+https://github.com/dgaida/robot_environment.git",
     "text2speech @ git+https://github.com/dgaida/text2speech.git",
@@ -76,12 +76,13 @@ Repository = "https://github.com/dgaida/robot_mcp"
 [project.scripts]
 # Command-line scripts
 robot-fastmcp-server = "server.fastmcp_robot_server:main"
-robot-fastmcp-client = "client.fastmcp_groq_client:main"
+robot-universal-client = "client.fastmcp_universal_client:main"
+robot-groq-client = "client.fastmcp_groq_client:main"
 robot-gui = "robot_gui.mcp_app:main"
-robot-examples = "fastmcp_main_client:main"
+robot-examples = "examples.fastmcp_main_client:main"
 
 [tool.setuptools]
-packages = ["client", "server", "robot_gui"]
+packages = ["client", "server", "robot_gui", "examples"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.txt", "*.sh", "*.bat", "*.env.template"]

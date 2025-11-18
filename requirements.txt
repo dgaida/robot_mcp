@@ -2,7 +2,9 @@
 
 # Core MCP dependencies
 fastmcp>=0.1.0
-groq>=0.11.0
+
+# Multi-LLM support
+git+https://github.com/dgaida/llm_client.git
 
 # Robot environment (from GitHub)
 git+https://github.com/dgaida/robot_environment.git
@@ -10,8 +12,10 @@ git+https://github.com/dgaida/robot_environment.git
 # Text-to-speech (from GitHub)
 git+https://github.com/dgaida/text2speech.git
 
+# Speech recognition (from GitHub)
 git+https://github.com/dgaida/speech2text.git
 
+# Redis communication (from GitHub)
 git+https://github.com/dgaida/redis_robot_comm.git
 
 # GUI dependencies

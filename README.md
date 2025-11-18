@@ -1,6 +1,6 @@
 # Robot MCP Control System
 
-Natural language robot control using **FastMCP** and Groq's LLM API.
+Natural language robot control using **FastMCP** and **Multi-LLM Support** (OpenAI, Groq, Gemini, Ollama).
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,22 +12,31 @@ Natural language robot control using **FastMCP** and Groq's LLM API.
 
 ## 🎯 Overview
 
-Control robotic arms (Niryo Ned2, WidowX) through natural language using the Model Context Protocol (MCP) and large language models. Simply tell the robot what to do: *"Pick up the pencil and place it next to the red cube"*.
+Control robotic arms (Niryo Ned2, WidowX) through natural language using the Model Context Protocol (MCP) and **multiple LLM providers**. Simply tell the robot what to do: *"Pick up the pencil and place it next to the red cube"*.
+
+### 🆕 Multi-LLM Support
+
+Now supports **4 LLM providers** with automatic API detection:
+
+| Provider | Models | Best For | Speed |
+|----------|--------|----------|-------|
+| **OpenAI** | GPT-4o, GPT-4o-mini | Complex reasoning | Fast |
+| **Groq** | Kimi K2, Llama 3.3, Mixtral | Ultra-fast inference | Very Fast |
+| **Google Gemini** | Gemini 2.0/2.5 | Long context, multimodal | Fast |
+| **Ollama** | Llama 3.2, Mistral, CodeLlama | Local/offline use | Variable |
 
 ## 🎯 How It Works
 
 ```
 ┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│             │  MCP    │              │  Robot  │             │
-│  Groq LLM   │◄───────►│  MCP Server  │◄───────►│   Niryo/    │
-│   Client    │Protocol │   (FastMCP)  │   API   │   WidowX    │
-│             │         │              │         │             │
+│   Multi-    │  MCP    │              │  Robot  │             │
+│   LLM       │◄───────►│  MCP Server  │◄───────►│   Niryo/    │
+│  (OpenAI/   │Protocol │   (FastMCP)  │   API   │   WidowX    │
+│ Groq/Gemini)│         │              │         │             │
 └─────────────┘         └──────────────┘         └─────────────┘
       ▲                                                 │
-      │                                                 │
       │ Natural Language                     Physical   │
       │ Commands                             Actions    │
-      │                                                 │
    ┌──┴──┐                                          ┌───▼───┐
    │User │                                          │Objects│
    └─────┘                                          └───────┘
@@ -36,7 +45,7 @@ Control robotic arms (Niryo Ned2, WidowX) through natural language using the Mod
 ### System Flow
 
 1. **User** speaks natural language: "Pick up the pencil"
-2. **Groq LLM** interprets command and decides which tools to call
+2. **LLM** interprets command and decides which tools to call
 3. **MCP Client** sends tool calls to MCP server via SSE
 4. **MCP Server** executes robot commands
 5. **Robot** performs physical actions
@@ -45,12 +54,14 @@ Control robotic arms (Niryo Ned2, WidowX) through natural language using the Mod
 ## ✨ Key Features
 
 - 🤖 **Natural Language Control** - No programming required
-- 🔧 **Multi-Robot Support** - Niryo Ned2 and WidowX
-- 👁️ **Vision-Based Detection** - Automatic object detection and tracking
-- 🎨 **Gradio Web Interface** - User-friendly GUI with live camera feed
-- 🎤 **Voice Input** - Speak commands directly to the robot
+- 🔧 **Multi-LLM Support** - Choose OpenAI, Groq, Gemini, or Ollama
+- 🎯 **Auto-Detection** - Automatically selects available API
+- 🔄 **Hot-Swapping** - Switch providers during runtime
+- 🤖 **Multi-Robot Support** - Niryo Ned2 and WidowX
+- 👁️ **Vision-Based Detection** - Automatic object detection
+- 🎨 **Gradio Web Interface** - User-friendly GUI
+- 🎤 **Voice Input** - Speak commands directly
 - 🔊 **Audio Feedback** - Robot speaks status updates
-- 🎯 **Spatial Reasoning** - Understands relative positions and arrangements
 
 ## 🚀 Quick Start
 
@@ -59,7 +70,11 @@ Control robotic arms (Niryo Ned2, WidowX) through natural language using the Mod
 - Python 3.8+
 - Redis server
 - Niryo Ned2 or WidowX robot (or simulation)
-- Groq API key ([Get one free](https://console.groq.com/keys))
+- **At least one API key** from:
+  - [OpenAI](https://platform.openai.com/api-keys) (GPT-4o, GPT-4o-mini)
+  - [Groq](https://console.groq.com/keys) (Free tier available)
+  - [Google AI Studio](https://aistudio.google.com/apikey) (Gemini)
+  - [Ollama](https://ollama.com/) (Local, no API key needed)
 
 ### Installation
 
@@ -77,7 +92,27 @@ pip install -e .
 
 # Configure API keys
 cp secrets.env.template secrets.env
-# Edit secrets.env and add your GROQ_API_KEY
+# Edit secrets.env and add your API key(s)
+```
+
+### Configure API Keys
+
+Edit `secrets.env`:
+
+```bash
+# Add at least one API key (priority: OpenAI > Groq > Gemini)
+
+# OpenAI (GPT-4o, GPT-4o-mini)
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# Groq (Kimi, Llama, Mixtral) - Free tier available!
+GROQ_API_KEY=gsk-xxxxxxxxxxxxxxxx
+
+# Google Gemini (Gemini 2.0, 2.5)
+GEMINI_API_KEY=AIzaSy-xxxxxxxxxxxxxxxx
+
+# Ollama - No API key needed (runs locally)
+# Just install: curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
 ### Start Redis
@@ -92,63 +127,80 @@ docker run -p 6379:6379 redis:alpine
 # Terminal 1: Start FastMCP Server
 python server/fastmcp_robot_server.py --robot niryo --no-simulation
 
-# Terminal 2: Run interactive client
-python -c "from client.fastmcp_groq_client import RobotFastMCPClient; import asyncio; asyncio.run(RobotFastMCPClient('your_groq_key').connect())"
+# Terminal 2: Run universal client (auto-detects available API)
+python client/fastmcp_universal_client.py
 ```
 
 ## 💻 Usage
 
-### Interactive Chat Mode
+### Universal Client (Recommended)
+
+The new universal client auto-detects and uses available LLM providers:
 
 ```bash
-python fastmcp_main_client.py
+# Auto-detect API (uses first available: OpenAI > Groq > Gemini > Ollama)
+python client/fastmcp_universal_client.py
+
+# Explicitly use OpenAI
+python client/fastmcp_universal_client.py --api openai --model gpt-4o
+
+# Use Groq (fastest inference)
+python client/fastmcp_universal_client.py --api groq
+
+# Use Gemini
+python client/fastmcp_universal_client.py --api gemini --model gemini-2.0-flash
+
+# Use local Ollama (no internet required)
+python client/fastmcp_universal_client.py --api ollama --model llama3.2:1b
+
+# Single command mode
+python client/fastmcp_universal_client.py --command "What objects do you see?"
 ```
 
-Example conversation:
+### Interactive Features
 
 ```
 You: What objects do you see?
 🤖: I can see 3 objects: a pencil at [0.15, -0.05],
     a red cube at [0.20, 0.10], and a blue square at [0.18, -0.10]
 
+You: switch
+🔄 Current provider: GROQ
+Available: openai, groq, gemini, ollama
+Switch to: openai
+✓ Switched to OPENAI - gpt-4o-mini
+
 You: Move the pencil next to the red cube
 🤖: Done! I've placed the pencil to the right of the red cube.
-
-You: Arrange all objects in a line
-🤖: All objects are now arranged in a horizontal line,
-    spaced 8cm apart.
 ```
 
-### Web GUI
+### Legacy Groq-Only Client
+
+The original Groq-specific client is still available:
 
 ```bash
-# Launch GUI
-./launch_gui.sh  # Linux/Mac
-# or
-launch_gui.bat   # Windows
-
-# Options:
-./launch_gui.sh --robot widowx --real --share
+python client/fastmcp_groq_client.py
 ```
 
 ### Programmatic Usage
 
 ```python
-from client.fastmcp_groq_client import RobotFastMCPClient
+from client.fastmcp_universal_client import RobotUniversalMCPClient
 import asyncio
 
 async def demo():
-    client = RobotFastMCPClient(
-        groq_api_key="your_key",
-        model="moonshotai/kimi-k2-instruct-0905"
-    )
+    # Auto-detect available API
+    client = RobotUniversalMCPClient()
+
+    # Or specify provider
+    # client = RobotUniversalMCPClient(api_choice="openai", model="gpt-4o")
 
     await client.connect()
 
-    # Natural language commands
+    # Natural language commands work with any provider
     await client.chat("What objects do you see?")
-    await client.chat("Pick up the largest object and place it in the center")
-    await client.chat("Sort all objects by size")
+    await client.chat("Pick up the largest object")
+    await client.chat("Place it in the center")
 
     await client.disconnect()
 
@@ -157,7 +209,7 @@ asyncio.run(demo())
 
 ## 🛠️ Available Tools
 
-The FastMCP server exposes these robot control tools:
+The FastMCP server exposes these robot control tools (work with all LLM providers):
 
 ### Robot Control
 - `pick_place_object` - Complete pick and place operation
@@ -182,6 +234,43 @@ The FastMCP server exposes these robot control tools:
 ### Feedback
 - `speak` - Text-to-speech output
 
+## 📊 LLM Provider Comparison
+
+### Performance Characteristics
+
+| Provider | Function Calling | Speed | Cost | Offline | Best Use Case |
+|----------|-----------------|-------|------|---------|---------------|
+| **OpenAI** | ✅ Excellent | Fast | $$ | ❌ | Production, complex tasks |
+| **Groq** | ✅ Excellent | Very Fast | Free tier | ❌ | Development, prototyping |
+| **Gemini** | ✅ Excellent | Fast | Free tier | ❌ | Long context, multimodal |
+| **Ollama** | ⚠️ Limited | Variable | Free | ✅ | Local testing, privacy |
+
+### Recommended Models
+
+**For Complex Tasks:**
+```bash
+# OpenAI - Best reasoning
+--api openai --model gpt-4o
+
+# Groq - Fastest inference
+--api groq --model moonshotai/kimi-k2-instruct-0905
+```
+
+**For Development:**
+```bash
+# OpenAI - Fast and cheap
+--api openai --model gpt-4o-mini
+
+# Groq - Free and fast
+--api groq --model llama-3.3-70b-versatile
+```
+
+**For Local/Offline:**
+```bash
+# Ollama - No internet required
+--api ollama --model llama3.2:1b
+```
+
 ## 📚 Example Tasks
 
 ### Simple Commands
@@ -198,7 +287,6 @@ The FastMCP server exposes these robot control tools:
 "Arrange objects in a triangle pattern"
 "Group objects by color: red on left, blue on right"
 "Swap positions of the two largest objects"
-"Pick all pens and place them next to the chocolate bar"
 ```
 
 ### Complex Workflows
@@ -212,18 +300,18 @@ everything else on right, aligned in rows"
 
 ## 🎮 Gradio Web Interface
 
-The web GUI provides:
+The web GUI supports all LLM providers:
 
-- 💬 **Chat Interface** - Natural language interaction
-- 📹 **Live Camera** - Real-time workspace view with object annotations
-- 🎤 **Voice Input** - Speak your commands
-- 📊 **System Status** - Connection and operation monitoring
-- 📝 **Example Tasks** - Quick-start templates
-
-Launch with:
 ```bash
 python robot_gui/mcp_app.py --robot niryo
 ```
+
+Features:
+- 💬 Chat with robot using any LLM provider
+- 📹 Live camera feed with object annotations
+- 🎤 Voice input (Whisper)
+- 📊 System status monitoring
+- 🔄 Switch LLM providers on-the-fly
 
 ## ⚙️ Configuration
 
@@ -232,35 +320,34 @@ python robot_gui/mcp_app.py --robot niryo
 Create `secrets.env`:
 
 ```bash
-GROQ_API_KEY=gsk_your_api_key_here
-ELEVENLABS_API_KEY=your_elevenlabs_key  # Optional for TTS
+# Multi-LLM Support - Add any/all of these
+
+# OpenAI (priority if multiple keys present)
+OPENAI_API_KEY=sk-xxxxxxxx
+
+# Groq (fast, free tier available)
+GROQ_API_KEY=gsk-xxxxxxxx
+
+# Google Gemini
+GEMINI_API_KEY=AIzaSy-xxxxxxxx
+
+# Optional: ElevenLabs for better TTS
+ELEVENLABS_API_KEY=your_key
 ```
 
-### FastMCP Server Options
+### API Priority
 
+If multiple API keys are present, the client uses this priority:
+1. **OpenAI** (if `OPENAI_API_KEY` set)
+2. **Groq** (if `GROQ_API_KEY` set)
+3. **Gemini** (if `GEMINI_API_KEY` set)
+4. **Ollama** (fallback, no key needed)
+
+Override with `--api` flag:
 ```bash
-python server/fastmcp_robot_server.py \
-  --robot niryo \              # or widowx
-  --no-simulation \            # Use real robot
-  --host 127.0.0.1 \
-  --port 8000 \
-  --verbose
+# Force Gemini even if OpenAI key exists
+python client/fastmcp_universal_client.py --api gemini
 ```
-
-### Groq Models
-
-| Model | Speed | Quality | Best For |
-|-------|-------|---------|----------|
-| moonshotai/kimi-k2-instruct-0905 | Very Fast | Excellent | Default choice |
-| llama-3.3-70b-versatile | Fast | Excellent | Complex tasks |
-| llama-3.1-8b-instant | Very Fast | Good | Simple commands |
-
-## 📖 Documentation
-
-- **[Architecture Guide](docs/README.md)** - System design and data flow
-- **[API Reference](docs/api.md)** - Complete tool documentation
-- **[Examples](docs/examples.md)** - Common use cases
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues
 
 ## 🔧 Development
 
@@ -278,19 +365,12 @@ ruff check .
 mypy robot_mcp/
 ```
 
-### Adding New Tools
+## 📖 Documentation
 
-1. Add tool definition in `server/fastmcp_robot_server.py`:
-
-```python
-@mcp.tool
-def my_custom_tool(arg1: str, arg2: int) -> str:
-    """Tool description."""
-    result = # Your implementation
-    return result
-```
-
-2. The tool is automatically available to the LLM client
+- **[Architecture Guide](docs/README.md)** - System design and data flow
+- **[API Reference](docs/api.md)** - Complete tool documentation
+- **[Examples](docs/examples.md)** - Common use cases
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues
 
 ## 🤝 Contributing
 
@@ -304,9 +384,11 @@ Contributions welcome! Please:
 
 ## 📝 Notes
 
-**MCP vs FastMCP**: This repository now uses **FastMCP** exclusively. The older MCP implementation (stdio-based) is deprecated but still present in the codebase for reference.
+**Multi-LLM Architecture**: This repository uses the `LLMClient` class from the [llm_client](https://github.com/dgaida/llm_client) repository, providing unified access to multiple LLM providers.
 
-**Dependencies**: [Robot Environment](https://github.com/dgaida/robot_environment) and [Text2Speech](https://github.com/dgaida/text2speech) are automatically installed from GitHub as dependencies.
+**Function Calling Support**: OpenAI, Groq, and Gemini all support function calling natively. Ollama has limited support and falls back to text-based instruction following.
+
+**Dependencies**: [Robot Environment](https://github.com/dgaida/robot_environment) and [Text2Speech](https://github.com/dgaida/text2speech) are automatically installed from GitHub.
 
 ## 📄 License
 
@@ -315,10 +397,12 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 - [Model Context Protocol](https://modelcontextprotocol.io) - Communication framework
+- [OpenAI](https://openai.com) - GPT models
 - [Groq](https://groq.com) - Fast LLM inference
+- [Google Gemini](https://ai.google.dev/gemini-api) - Gemini models
+- [Ollama](https://ollama.com) - Local LLM deployment
 - [FastMCP](https://github.com/jlowin/fastmcp) - Modern MCP implementation
 - [Niryo Robotics](https://niryo.com) - Robot hardware
-- [OwlV2](https://huggingface.co/google/owlv2-base-patch16-ensemble) - Object detection
 
 ## 📧 Contact
 
