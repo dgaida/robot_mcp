@@ -390,6 +390,16 @@ await client.disconnect()
 env.cleanup()
 ```
 
+### Rate Limit Errors
+
+**Problem**: Too many requests to Groq
+
+**Solutions**:
+1. Add delays between commands
+2. Use a less powerful model (llama-3.1-8b-instant)
+3. Upgrade Groq plan for higher limits
+4. Clear conversation history: type `clear`
+
 ---
 
 ## Hardware Problems

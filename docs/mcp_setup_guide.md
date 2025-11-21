@@ -198,7 +198,7 @@ python client/fastmcp_universal_client.py --temperature 0.5 --max-tokens 2048
 
 ---
 
-## Usage Modes
+## 📚 Usage Modes
 
 ### 1. Interactive Chat Mode (Default)
 
@@ -285,6 +285,16 @@ python examples/universal_examples.py all
 # Compare LLM providers
 python examples/universal_examples.py compare_providers
 ```
+
+### 5. Claude Desktop Integration
+
+**Best for**: Using with Claude's interface
+
+```bash
+TODO - not yet implemented
+```
+
+Add to Claude Desktop, restart, and use tools directly in Claude!
 
 ---
 
@@ -640,12 +650,42 @@ quit    - Exit interactive mode
 
 ---
 
+## 🎯 Use Cases
+
+### 1. Research & Development
+- Rapid prototyping of robot behaviors
+- Testing manipulation strategies
+- Human-robot interaction studies
+
+### 2. Education
+- Teaching robotics concepts
+- Demonstrating AI integration
+- Student projects
+
+### 3. Industrial Automation
+- Pick-and-place tasks
+- Quality control sorting
+- Assembly line operations
+
+### 4. Warehouse & Logistics
+- Object sorting
+- Inventory management
+- Package handling
+
+### 5. Assistive Robotics
+- Object retrieval
+- Workspace organization
+- Personalized assistance
+
+---
+
 ## Getting Help
 
 **Resources:**
-- [API Reference & Architecture](mcp_reference.md) - Complete API documentation
+- [API Reference & Architecture](mcp_api_reference.md) - Complete API documentation
 - [GitHub Issues](https://github.com/dgaida/robot_mcp/issues) - Report bugs
-- [Example Scripts](examples/) - See working examples
+- [Example Scripts](../examples/) - See working examples
+- **MCP Documentation**: https://modelcontextprotocol.io
 
 **Before Opening an Issue:**
 
