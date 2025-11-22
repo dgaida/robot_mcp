@@ -1,6 +1,6 @@
 # Robot MCP - Examples
 
-Common use cases and example workflows for robot control.
+Common use cases and example workflows for robot control with natural language.
 
 ## Table of Contents
 
@@ -18,72 +18,64 @@ Common use cases and example workflows for robot control.
 
 ### Example 1: Hello Robot
 
-Simple first interaction with the robot.
-
-```python
-# Natural language
-"What objects do you see?"
-
-# The LLM will call:
-# 1. move2observation_pose("niryo_ws")
-# 2. get_detected_objects()
-#
-# Response: "I can see 3 objects: a pencil at [0.15, -0.05],
-#            a red cube at [0.20, 0.10], and a pen at [0.18, -0.03]"
 ```
+You: What objects do you see?
 
-**Key Concepts:**
-- Robot automatically moves to observation pose
-- Object detection happens in background
-- Coordinates are reported in meters
+🔧 Calling tool: get_detected_objects
+✓ Result: Detected 3 objects:
+   - pencil at [0.15, -0.05]
+   - red cube at [0.20, 0.10]
+   - pen at [0.18, -0.03]
+
+🤖 Assistant: I can see 3 objects: a pencil at [0.15, -0.05],
+   a red cube at [0.20, 0.10], and a pen at [0.18, -0.03]
+```
 
 ---
 
 ### Example 2: Simple Pick and Place
 
-Move a single object.
-
-```python
-# Natural language
-"Pick up the pencil and place it at [0.2, 0.1]"
-
-# Executes:
-pick_place_object(
-    object_name="pencil",
-    pick_coordinate=[0.15, -0.05],  # From detection
-    place_coordinate=[0.2, 0.1],
-    location=None
-)
 ```
+You: Pick up the pencil and place it at [0.2, 0.1]
 
-**Learning Points:**
-- LLM detects objects first to get coordinates
-- Object names must match detected labels
-- Direct coordinate placement
+🔧 Calling tool: get_detected_objects
+✓ Result: Detected objects...
+
+🔧 Calling tool: pick_place_object
+   Arguments: {
+     "object_name": "pencil",
+     "pick_coordinate": [0.15, -0.05],
+     "place_coordinate": [0.2, 0.1],
+     "location": "none"
+   }
+✓ Result: Successfully picked and placed
+
+🤖 Assistant: Done! I've picked up the pencil from [0.15, -0.05]
+   and placed it at [0.2, 0.1].
+```
 
 ---
 
 ### Example 3: Relative Placement
 
-Place object relative to another.
-
-```python
-# Natural language
-"Move the pencil to the right of the red cube"
-
-# Executes:
-pick_place_object(
-    object_name="pencil",
-    pick_coordinate=[0.15, -0.05],
-    place_coordinate=[0.20, 0.10],  # Cube position
-    location="right next to"
-)
 ```
+You: Move the pencil to the right of the red cube
 
-**Key Points:**
-- `location` parameter defines relative position
-- Robot calculates final placement automatically
-- Maintains safe spacing between objects
+🔧 Calling tool: get_detected_objects
+✓ Result: Found pencil and red cube
+
+🔧 Calling tool: pick_place_object
+   Arguments: {
+     "object_name": "pencil",
+     "pick_coordinate": [0.15, -0.05],
+     "place_coordinate": [0.20, 0.10],
+     "location": "right next to"
+   }
+✓ Result: Successfully placed
+
+🤖 Assistant: Perfect! I've moved the pencil to the right of
+   the red cube.
+```
 
 ---
 
@@ -91,101 +83,87 @@ pick_place_object(
 
 ### Workspace Scan
 
-Comprehensive workspace analysis.
-
-**Command:**
-```python
-"Scan the workspace and tell me everything you see"
 ```
+You: Scan the workspace and tell me everything you see
 
-**LLM Workflow:**
-```python
-# 1. Move to observation
-move2observation_pose("niryo_ws")
+🔧 Calling tool: move2observation_pose("niryo_ws")
+✓ Result: Moved to observation pose
 
-# 2. Get all objects
-objects = get_detected_objects()
+🔧 Calling tool: get_detected_objects
+✓ Result: Detected 4 objects...
 
-# 3. Analyze and report
-for obj in objects:
-    print(f"{obj['label']} at [{obj['x']:.3f}, {obj['y']:.3f}]")
-    print(f"  Size: {obj['width_m']*100:.1f}cm × {obj['height_m']*100:.1f}cm")
-```
+🤖 Assistant: I can see 4 objects in the workspace:
 
-**Output:**
-```
-I can see 4 objects in the workspace:
-1. Pencil at [0.15, -0.05] (1.5cm × 12cm)
-2. Red cube at [0.20, 0.10] (4cm × 4cm)
-3. Pen at [0.18, -0.03] (1.2cm × 14cm)
-4. Blue square at [0.18, -0.10] (5cm × 5cm)
+   1. Pencil at [0.15, -0.05]
+      Size: 1.5cm × 12cm (area: 18 cm²)
+
+   2. Red cube at [0.20, 0.10]
+      Size: 4cm × 4cm (area: 16 cm²)
+
+   3. Pen at [0.18, -0.03]
+      Size: 1.2cm × 14cm (area: 16.8 cm²)
+
+   4. Blue square at [0.18, -0.10]
+      Size: 5cm × 5cm (area: 25 cm²)
 ```
 
 ---
 
 ### Find Specific Objects
 
-Query for particular items.
+```
+You: Where is the pencil?
 
-**Commands:**
-```python
-# Find by name
-"Where is the pencil?"
+🔧 Calling tool: get_detected_objects(label="pencil")
+✓ Result: Found pencil at [0.15, -0.05]
 
-# Find by properties
-"Which object is the largest?"
-"What's the smallest object?"
-
-# Find by location
-"What objects are on the left side?"
-"Is there anything near [0.2, 0.0]?"
+🤖 Assistant: The pencil is located at coordinates [0.15, -0.05].
 ```
 
-**Implementation Examples:**
+```
+You: Which object is the largest?
 
-```python
-# Find by name
-obj = get_detected_objects(label="pencil")[0]
-# Returns first pencil found
+🔧 Calling tool: get_largest_detected_object
+✓ Result: {
+  "label": "blue square",
+  "position": {"x": 0.18, "y": -0.10},
+  "size": {"area_cm2": 25.0}
+}
 
-# Find largest
-largest, size = get_largest_detected_object()
-# Returns biggest object and its area
+🤖 Assistant: The largest object is the blue square at
+   [0.18, -0.10] with an area of 25 square centimeters.
+```
 
-# Find by location
-left_objects = get_detected_objects(
-    location="left next to",
-    coordinate=[0.25, 0.0]  # Center reference
-)
+```
+You: What objects are on the left side?
+
+🔧 Calling tool: get_detected_objects(
+     location="left next to",
+     coordinate=[0.25, 0.0]
+   )
+✓ Result: Found 2 objects on left side
+
+🤖 Assistant: On the left side I found:
+   - Red cube at [0.20, 0.10]
+   - Pen at [0.18, -0.03]
 ```
 
 ---
 
 ### Safe Placement
 
-Find optimal placement location.
-
-**Command:**
-```python
-"Find a safe place to put this object"
 ```
+You: Find a safe place to put this object
 
-**Implementation:**
-```python
-# Get largest free space
-area, cx, cy = get_largest_free_space_with_center()
+🔧 Calling tool: get_largest_free_space_with_center
+✓ Result: area=0.0050 m², center=[0.25, -0.04]
 
-# Place object there
-place_object(
-    place_coordinate=[cx, cy],
-    location=None
-)
+🔧 Calling tool: place_object([0.25, -0.04], None)
+✓ Result: Successfully placed
+
+🤖 Assistant: I've placed the object in the largest free space
+   at [0.25, -0.04] (50 cm² available).
 ```
-
-**Use Cases:**
-- Avoiding collisions
-- Dense workspace organization
-- Automated placement decisions
 
 ---
 
@@ -193,241 +171,148 @@ place_object(
 
 ### Sorting by Size
 
-Arrange objects in size order.
-
-**Command:**
-```python
-"Sort all objects by size from smallest to largest in a line"
 ```
+You: Sort all objects by size from smallest to largest in a line
 
-**Workflow:**
-```python
-# 1. Get sorted objects
-sorted_objs = get_detected_objects_sorted(ascending=True)
+🔧 Calling tool: get_detected_objects_sorted(ascending=True)
+✓ Result: Sorted 3 objects by size
 
-# 2. Calculate positions
-start_x, start_y = 0.15, -0.05
-spacing = 0.08  # 8cm apart
+🔧 Calling tool: pick_place_object (object 1)
+   Arguments: {"object_name": "pen", ...}
+✓ Result: Placed smallest object
 
-# 3. Move each object
-for i, obj in enumerate(sorted_objs):
-    target_y = start_y + (i * spacing)
+🔧 Calling tool: pick_place_object (object 2)
+   Arguments: {"object_name": "pencil", ...}
+✓ Result: Placed medium object
 
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[start_x, target_y],
-        location=None
-    )
-```
+🔧 Calling tool: pick_place_object (object 3)
+   Arguments: {"object_name": "cube", ...}
+✓ Result: Placed largest object
 
-**Result:**
-```
-Smallest ─→ Largest
-   │         │
-  [│]       [██]
-  pen      cube
+🤖 Assistant: Done! I've sorted all objects by size in a horizontal
+   line:
+   - Smallest: pen at [0.15, -0.05]
+   - Medium: pencil at [0.15, 0.03]
+   - Largest: cube at [0.15, 0.11]
 ```
 
 ---
 
 ### Color-Based Grouping
 
-Organize by object attributes.
-
-**Command:**
-```python
-"Group objects by color: red on left, blue on right"
 ```
+You: Group objects by color: red on left, blue on right
 
-**Workflow:**
-```python
-# 1. Detect all objects
-all_objects = get_detected_objects()
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 4 objects
 
-# 2. Filter by color (from label)
-red_objects = [obj for obj in all_objects if 'red' in obj['label']]
-blue_objects = [obj for obj in all_objects if 'blue' in obj['label']]
+🔧 Calling tool: pick_place_object (red cube)
+✓ Result: Moved to left side
 
-# 3. Place red objects on left
-for i, obj in enumerate(red_objects):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[0.20, 0.06 + i*0.04],
-        location=None
-    )
+🔧 Calling tool: pick_place_object (blue square)
+✓ Result: Moved to right side
 
-# 4. Place blue objects on right
-for i, obj in enumerate(blue_objects):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[0.20, -0.06 - i*0.04],
-        location=None
-    )
+🤖 Assistant: Objects are now grouped by color:
+   - Left side (red): red cube at [0.20, 0.06]
+   - Right side (blue): blue square at [0.20, -0.06]
 ```
 
 ---
 
 ### Stacking Objects
 
-Create vertical arrangements.
-
-**Command:**
-```python
-"Stack the small cube on top of the large cube"
 ```
+You: Stack the small cube on top of the large cube
 
-**Implementation:**
-```python
-# Find both cubes
-cubes = get_detected_objects(label="cube")
-small_cube = min(cubes, key=lambda x: x['area_m2'])
-large_cube = max(cubes, key=lambda x: x['area_m2'])
+🔧 Calling tool: get_detected_objects(label="cube")
+✓ Result: Found 2 cubes
 
-# Stack small on large
-pick_place_object(
-    object_name=small_cube['label'],
-    pick_coordinate=[small_cube['x'], small_cube['y']],
-    place_coordinate=[large_cube['x'], large_cube['y']],
-    location="on top of"
-)
+🔧 Calling tool: pick_place_object
+   Arguments: {
+     "object_name": "small cube",
+     "pick_coordinate": [0.16, 0.05],
+     "place_coordinate": [0.22, 0.10],
+     "location": "on top of"
+   }
+✓ Result: Successfully stacked
+
+🤖 Assistant: Perfect! I've stacked the small cube on top of
+   the large cube at [0.22, 0.10].
 ```
-
-**Notes:**
-- Use `"on top of"` location
-- Robot adjusts Z-height automatically
-- Works for stable, flat objects
 
 ---
 
 ## Spatial Reasoning
 
-### Pattern Creation
+### Triangle Pattern
 
-Geometric arrangements.
-
-**Triangle Pattern:**
-```python
-"Arrange objects in a triangle"
-
-# Workflow:
-objects = get_detected_objects()
-
-# Define triangle vertices
-positions = [
-    [0.20, 0.00],   # Top
-    [0.28, -0.06],  # Bottom right
-    [0.28, 0.06],   # Bottom left
-]
-
-# Place objects
-for obj, pos in zip(objects[:3], positions):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=pos,
-        location=None
-    )
 ```
+You: Arrange objects in a triangle
 
-**Result:**
-```
-        ○
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 3 objects
+
+🔧 Calling tool: pick_place_object (object 1)
+   → Top vertex: [0.20, 0.00]
+✓ Result: Placed
+
+🔧 Calling tool: pick_place_object (object 2)
+   → Bottom right: [0.28, -0.06]
+✓ Result: Placed
+
+🔧 Calling tool: pick_place_object (object 3)
+   → Bottom left: [0.28, 0.06]
+✓ Result: Placed
+
+🤖 Assistant: Done! Objects arranged in triangle:
+        ○ [0.20, 0.00]
        / \
       /   \
      ○─────○
-```
-
-**Square Pattern:**
-```python
-positions = [
-    [0.18, -0.06],  # Top-left
-    [0.18, 0.06],   # Top-right
-    [0.26, -0.06],  # Bottom-left
-    [0.26, 0.06],   # Bottom-right
-]
+   [0.28,  [0.28,
+    0.06]  -0.06]
 ```
 
 ---
 
 ### Distance-Based Queries
 
-Find objects by proximity.
-
-**Command:**
-```python
-"What's the closest object to [0.2, 0.0]?"
 ```
+You: What's the closest object to [0.2, 0.0]?
 
-**Implementation:**
+🔧 Calling tool: get_detected_objects(
+     location="close to",
+     coordinate=[0.2, 0.0]
+   )
+✓ Result: Found pencil at [0.20, 0.02]
 
-```python
-import math
-
-def distance(obj, target):
-    return math.sqrt(
-        (obj['x'] - target[0])**2 +
-        (obj['y'] - target[1])**2
-    )
-
-objects = get_detected_objects()
-target = [0.2, 0.0]
-
-closest = min(objects, key=lambda o: distance(o, target))
-dist = distance(closest, target)
-
-print(f"Closest: {closest['label']} at {dist*100:.1f}cm away")
-```
-
-There is an easier implementation:
-
-```python
-target = [0.2, 0.0]
-object = get_detected_objects(location="close to", coordinate=target)
-
-print(f"Closest: {closest['label']} at {dist*100:.1f}cm away")
+🤖 Assistant: The pencil at [0.20, 0.02] is closest,
+   only 2 centimeters away from [0.2, 0.0].
 ```
 
 ---
 
 ### Boundary-Aware Placement
 
-Respect workspace limits.
-
-**Command:**
-```python
-"Place objects at the corners of the workspace"
 ```
+You: Place objects at the corners of the workspace
 
-**Implementation:**
-```python
-# Get workspace corners
-upper_left = get_workspace_coordinate_from_point(
-    "niryo_ws", "upper left corner"
-)
-upper_right = get_workspace_coordinate_from_point(
-    "niryo_ws", "upper right corner"
-)
-lower_left = get_workspace_coordinate_from_point(
-    "niryo_ws", "lower left corner"
-)
-lower_right = get_workspace_coordinate_from_point(
-    "niryo_ws", "lower right corner"
-)
+🔧 Calling tool: get_workspace_coordinate_from_point
+   ("niryo_ws", "upper left corner")
+✓ Result: [0.337, 0.087]
 
-corners = [upper_left, upper_right, lower_left, lower_right]
-objects = get_detected_objects()[:4]
+🔧 Calling tool: get_workspace_coordinate_from_point
+   ("niryo_ws", "upper right corner")
+✓ Result: [0.337, -0.087]
 
-# Place at corners
-for obj, corner in zip(objects, corners):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=corner,
-        location=None
-    )
+🔧 Calling tool: pick_place_object (4 times)
+✓ Result: Placed all objects at corners
+
+🤖 Assistant: Objects placed at workspace corners:
+   - Upper left: [0.337, 0.087]
+   - Upper right: [0.337, -0.087]
+   - Lower left: [0.163, 0.087]
+   - Lower right: [0.163, -0.087]
 ```
 
 ---
@@ -436,130 +321,84 @@ for obj, corner in zip(objects, corners):
 
 ### Multi-Step Task
 
-Sequential operations with dependencies.
-
-**Command:**
-```python
-"""
-Execute this sequence:
-1. Find the pencil
-2. Move it to the center
-3. Find the largest object
-4. Place it to the right of the pencil
-5. Report final positions
-"""
 ```
+You: Execute: 1) Find the pencil 2) Move it to center 3) Find
+     largest object 4) Place it right of pencil 5) Report positions
 
-**LLM Reasoning:**
-```python
-# Step 1: Find pencil
-objects = get_detected_objects()
-pencil = get_detected_object([0, 0], label="pencil")
+🔧 Calling tool: get_detected_objects(label="pencil")
+✓ Result: Pencil at [0.15, -0.05]
 
-# Step 2: Move to center
-center = get_workspace_coordinate_from_point("niryo_ws", "center point")
-pick_place_object(
-    object_name="pencil",
-    pick_coordinate=[pencil['x'], pencil['y']],
-    place_coordinate=center,
-    location=None
-)
+🔧 Calling tool: get_workspace_coordinate_from_point
+   ("niryo_ws", "center point")
+✓ Result: [0.25, 0.0]
 
-# Step 3: Find largest
-largest, _ = get_largest_detected_object()
+🔧 Calling tool: pick_place_object
+   → Move pencil to center
+✓ Result: Placed at [0.25, 0.0]
 
-# Step 4: Place right of pencil
-pick_place_object(
-    object_name=largest['label'],
-    pick_coordinate=[largest['x'], largest['y']],
-    place_coordinate=center,  # Pencil's new position
-    location="right next to"
-)
+🔧 Calling tool: get_largest_detected_object
+✓ Result: Red cube at [0.20, 0.10]
 
-# Step 5: Report
-final_objects = get_detected_objects()
-speak("Task completed. All objects repositioned.")
+🔧 Calling tool: pick_place_object
+   Arguments: {
+     "place_coordinate": [0.25, 0.0],
+     "location": "right next to"
+   }
+✓ Result: Placed right of pencil
+
+🔧 Calling tool: get_detected_objects
+✓ Result: Updated positions
+
+🤖 Assistant: Task completed! Final positions:
+   - Pencil: [0.25, 0.0] (center)
+   - Red cube: [0.25, -0.04] (right of pencil)
 ```
 
 ---
 
 ### Conditional Logic
 
-Decision-making based on workspace state.
-
-**Command:**
-```python
-"""
-If there are more than 3 objects, arrange them in a grid.
-Otherwise, arrange them in a line.
-"""
 ```
+You: If there are more than 3 objects, arrange in grid.
+     Otherwise, arrange in line.
 
-**Implementation:**
-```python
-objects = get_detected_objects()
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 4 objects
 
-if len(objects) > 3:
-    # Grid arrangement (2x2)
-    positions = [
-        [0.18, -0.04], [0.18, 0.04],
-        [0.26, -0.04], [0.26, 0.04],
-    ]
-else:
-    # Line arrangement
-    positions = [
-        [0.20, -0.06],
-        [0.20, 0.00],
-        [0.20, 0.06],
-    ]
+🤖 Assistant: Found 4 objects (more than 3), arranging in 2×2 grid...
 
-# Execute placement
-for obj, pos in zip(objects, positions):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=pos,
-        location=None
-    )
+🔧 Calling tool: pick_place_object (4 times)
+   Grid positions:
+   [0.18, -0.04] [0.18, 0.04]
+   [0.26, -0.04] [0.26, 0.04]
+✓ Result: All objects arranged
+
+🤖 Assistant: Grid arrangement complete:
+   ○  ○  [0.18, -0.04] [0.18, 0.04]
+   ○  ○  [0.26, -0.04] [0.26, 0.04]
 ```
 
 ---
 
 ### Error Recovery
 
-Graceful failure handling.
-
-**Command:**
-```python
-"""
-Try to pick the 'diamond'. If not found, pick any object instead.
-"""
 ```
+You: Try to pick the 'diamond'. If not found, pick any object instead.
 
-**Workflow:**
-```python
-# Try to find diamond
-diamond = get_detected_objects(label="diamond")
+🔧 Calling tool: get_detected_objects(label="diamond")
+✓ Result: No object with label 'diamond' found
 
-if diamond is None:
-    speak("Diamond not found. Picking alternative object.")
-    # Get any object
-    objects = get_detected_objects()
-    if objects:
-        target = objects[0]
-    else:
-        speak("No objects available")
-        return
-else:
-    target = diamond[0]
+🔧 Calling tool: speak("Diamond not found. Picking alternative object.")
+✓ Result: Speaking...
 
-# Proceed with pick
-pick_place_object(
-    object_name=target['label'],
-    pick_coordinate=[target['x'], target['y']],
-    place_coordinate=[0.25, 0.0],
-    location=None
-)
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 3 objects
+
+🔧 Calling tool: pick_object("pencil", [0.15, -0.05])
+✓ Result: Picked pencil as alternative
+
+🤖 Assistant: I couldn't find a diamond, so I picked up the
+   pencil instead as an alternative.
 ```
 
 ---
@@ -568,279 +407,251 @@ pick_place_object(
 
 ### Batch Processing
 
-Process all objects with same operation.
-
-**Command:**
-```python
-"Move all small objects (< 20 cm²) to the left side"
 ```
+You: Move all small objects (< 20 cm²) to the left side
 
-**Implementation:**
-```python
-objects = get_detected_objects()
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 4 objects
 
-# Filter by size
-small_objects = [
-    obj for obj in objects
-    if obj['area_m2'] * 10000 < 20  # Convert to cm²
-]
+🤖 Assistant: Filtering objects under 20 cm²...
+   Found 2 small objects: pen (16.8 cm²), pencil (18 cm²)
 
-# Calculate positions on left side
-left_x = 0.18
-spacing = 0.05
+🔧 Calling tool: pick_place_object (pen)
+   → Target: [0.18, -0.06]
+✓ Result: Placed
 
-for i, obj in enumerate(small_objects):
-    target_y = -0.06 + (i * spacing)
+🔧 Calling tool: pick_place_object (pencil)
+   → Target: [0.18, -0.01]
+✓ Result: Placed
 
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[left_x, target_y],
-        location=None
-    )
+🔧 Calling tool: speak("Moved 2 small objects to the left")
+✓ Result: Speaking...
 
-speak(f"Moved {len(small_objects)} small objects to the left")
+🤖 Assistant: Done! Moved 2 small objects to the left side:
+   - Pen: [0.18, -0.06]
+   - Pencil: [0.18, -0.01]
 ```
 
 ---
 
 ### Push Operations
 
-Handle oversized objects.
-
-**Command:**
-```python
-"If the object is too large to pick, push it instead"
 ```
+You: If the object is too large to pick, push it instead
 
-**Workflow:**
-```python
-objects = get_detected_objects()
-target = get_largest_detected_object()[0]
+🔧 Calling tool: get_largest_detected_object
+✓ Result: Large box at [0.25, 0.05], width: 8cm
 
-# Check if grippable (< 5cm width)
-if target['width_m'] > 0.05:
-    speak("Object too large to grip. Using push operation.")
+🤖 Assistant: Object width (8cm) exceeds gripper limit (5cm).
+   Using push operation...
 
-    # Push 5cm to the right
-    push_object(
-        object_name=target['label'],
-        push_coordinate=[target['x'], target['y']],
-        direction="right",
-        distance=50.0  # millimeters
-    )
-else:
-    # Normal pick-and-place
-    pick_place_object(
-        object_name=target['label'],
-        pick_coordinate=[target['x'], target['y']],
-        place_coordinate=[0.25, 0.0],
-        location=None
-    )
+🔧 Calling tool: speak("Object too large to grip. Using push.")
+✓ Result: Speaking...
+
+🔧 Calling tool: push_object
+   Arguments: {
+     "object_name": "large box",
+     "push_coordinate": [0.25, 0.05],
+     "direction": "right",
+     "distance": 50.0
+   }
+✓ Result: Pushed 50mm to the right
+
+🤖 Assistant: Successfully pushed the large box 5cm to the right.
+   New position: [0.25, 0.0]
 ```
 
 ---
 
 ### Dynamic Workspace Adaptation
 
-Adjust to changing conditions.
-
-**Command:**
-```python
-"Organize the workspace: densely packed objects to the right, spread out objects to the left"
 ```
+You: Organize workspace: densely packed objects to right,
+     spread out objects to left
 
-**Implementation:**
-```python
-objects = get_detected_objects()
+🔧 Calling tool: get_detected_objects
+✓ Result: Found 5 objects
 
-# Calculate object density
-def get_neighbors(obj, all_objs, radius=0.05):
-    count = 0
-    for other in all_objs:
-        if other == obj:
-            continue
-        dist = math.sqrt(
-            (obj['x'] - other['x'])**2 +
-            (obj['y'] - other['y'])**2
-        )
-        if dist < radius:
-            count += 1
-    return count
+🤖 Assistant: Analyzing object density...
+   - Dense cluster (3 objects): right side
+   - Sparse objects (2 objects): left side
 
-# Classify objects
-dense_objects = []
-sparse_objects = []
+🔧 Calling tool: pick_place_object (3 times for dense)
+   → Right positions: [0.28, -0.08], [0.28, -0.04], [0.28, 0.0]
+✓ Result: Dense objects positioned
 
-for obj in objects:
-    neighbors = get_neighbors(obj, objects)
-    if neighbors >= 2:
-        dense_objects.append(obj)
-    else:
-        sparse_objects.append(obj)
+🔧 Calling tool: pick_place_object (2 times for sparse)
+   → Left positions: [0.18, -0.02], [0.18, 0.06]
+✓ Result: Sparse objects positioned
 
-# Move dense to right, sparse to left
-for i, obj in enumerate(dense_objects):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[0.28, -0.06 + i*0.04],
-        location=None
-    )
-
-for i, obj in enumerate(sparse_objects):
-    pick_place_object(
-        object_name=obj['label'],
-        pick_coordinate=[obj['x'], obj['y']],
-        place_coordinate=[0.18, -0.06 + i*0.04],
-        location=None
-    )
+🤖 Assistant: Workspace organized:
+   - Left (sparse): 2 objects with 8cm spacing
+   - Right (dense): 3 objects with 4cm spacing
 ```
 
 ---
 
 ## Tips and Best Practices
 
-Hint: Those tips should be followed by the LLM. But if something that the LLM does, goes wrong, you might find here the reasons for that.
-
 ### 1. Always Detect Before Manipulating
 
-```python
-# ✅ Good: Fresh detection
-objects = get_detected_objects()
-pencil = next(o for o in objects if o['label'] == 'pencil')
-pick_object("pencil", [pencil['x'], pencil['y']])
-
-# ❌ Bad: Stale coordinates
-# Someone might have moved the object!
-pick_object("pencil", [0.15, -0.05])  # Old position
 ```
+✅ Good:
+You: What objects do you see?
+     [Wait for response]
+You: Pick up the pencil
+
+🔧 Uses fresh coordinates from detection
+
+❌ Bad:
+You: Pick up the pencil at [0.15, -0.05]
+
+⚠️  Coordinates might be stale if object moved
+```
+
+---
 
 ### 2. Use Exact Label Matching
 
-```python
-# ✅ Good: Exact match
-objects = get_detected_objects()
-pencil = get_detected_object([0, 0], label="pencil")
-
-# ❌ Bad: Case mismatch
-pencil = get_detected_object([0, 0], label="Pencil")  # Won't match "pencil"
 ```
+✅ Good:
+🔧 get_detected_objects
+✓ Result: Found "pencil" (lowercase)
+
+🔧 pick_object("pencil", ...)  ← Exact match
+
+❌ Bad:
+🔧 pick_object("Pencil", ...)  ← Wrong case
+🔧 pick_object("pen", ...)     ← Wrong object
+```
+
+---
 
 ### 3. Check for Success
 
-```python
-# ✅ Good: Verify object exists
-obj = get_detected_object([0.2, 0.0], label="target")
-if obj is None:
-    speak("Target object not found")
-    return
-
-pick_place_object(
-    object_name="target",
-    pick_coordinate=[obj['x'], obj['y']],
-    place_coordinate=[0.25, 0.0],
-    location=None
-)
-
-# ❌ Bad: No verification
-pick_place_object("target", [0.2, 0.0], [0.25, 0.0], None)
 ```
+✅ Good:
+You: Pick up the pencil
+     [Wait for confirmation]
+You: Did that work?
+
+🔧 Calling tool: get_detected_objects(label="pencil")
+✓ Result: Pencil position changed ← Success!
+
+❌ Bad:
+You: Pick up pencil. Move cube. Stack items.
+     [No verification between steps]
+```
+
+---
 
 ### 4. Use Safe Placement
 
-```python
-# ✅ Good: Find free space
-area, cx, cy = get_largest_free_space_with_center()
-place_object([cx, cy], None)
-
-# ⚠️ Risky: Fixed coordinates might collide
-place_object([0.25, 0.0], None)
 ```
+✅ Good:
+You: Place object in a safe location
+
+🔧 get_largest_free_space_with_center
+✓ Result: area=0.0045 m², center=[0.24, -0.03]
+
+🔧 place_object([0.24, -0.03], None)
+✓ Result: No collisions
+
+❌ Risky:
+You: Place object at [0.25, 0.0]
+
+⚠️  Might collide with existing objects
+```
+
+---
 
 ### 5. Provide User Feedback
 
-```python
-# ✅ Good: Informative
-speak("Scanning workspace...")
-objects = get_detected_objects()
-speak(f"Found {len(objects)} objects")
-
-# Process objects...
-speak("Task completed successfully")
-
-# ❌ Bad: Silent operation
-objects = get_detected_objects()
-# ... (user doesn't know what's happening)
 ```
+✅ Good:
+🔧 speak("Scanning workspace...")
+🔧 get_detected_objects
+🔧 speak("Found 3 objects")
+🔧 pick_place_object
+🔧 speak("Task completed successfully")
+
+❌ Bad:
+🔧 get_detected_objects
+🔧 pick_place_object
+[Silent operation, user uncertain]
+```
+
+---
 
 ### 6. Handle Workspace Bounds
 
-```python
-# ✅ Good: Respect limits
-upper_left = get_workspace_coordinate_from_point("niryo_ws", "upper left corner")
-lower_right = get_workspace_coordinate_from_point("niryo_ws", "lower right corner")
-
-# Ensure coordinates are within bounds
-x = max(lower_right[0], min(upper_left[0], target_x))
-y = max(lower_right[1], min(upper_left[1], target_y))
-
-place_object([x, y], None)
-
-# ❌ Bad: Out of bounds
-place_object([0.50, 0.20], None)  # Too far!
 ```
+✅ Good:
+🔧 get_workspace_coordinate_from_point("niryo_ws", "upper left")
+✓ Result: [0.337, 0.087] ← Valid bounds
+
+🔧 Ensure target within: X=[0.163, 0.337], Y=[-0.087, 0.087]
+
+❌ Bad:
+🔧 place_object([0.50, 0.20], None)
+✗ Error: Coordinates out of workspace bounds
+```
+
+---
 
 ### 7. Use Relative Placement
 
-```python
-# ✅ Good: Adaptive positioning
-pick_place_object(
-    object_name="cube",
-    pick_coordinate=[0.18, -0.05],
-    place_coordinate=[0.22, 0.10],
-    location="right next to"  # Robot calculates exact position
-)
+```
+✅ Good - Adaptive:
+🔧 pick_place_object(
+     ...,
+     place_coordinate=[0.22, 0.10],
+     location="right next to"
+   )
+✓ Robot calculates exact position with safe spacing
 
-# ❌ Less flexible: Manual offset calculation
-target_y = 0.10 - 0.04  # Manual spacing
-pick_place_object("cube", [0.18, -0.05], [0.22, target_y], None)
+❌ Less Flexible - Manual:
+target_y = 0.10 - 0.04  # Manual offset
+🔧 pick_place_object(..., [0.22, 0.06], None)
+⚠️  Fixed spacing might not be optimal
 ```
 
 ---
 
 ## Running the Examples
 
-### Using the Example Script
-
-```bash
-# Run specific example
-python examples/fastmcp_main_client.py workspace_scan
-
-# Run all examples
-python examples/fastmcp_main_client.py all
-
-# Custom model
-python examples/fastmcp_main_client.py sort_by_size --model llama-3.1-8b-instant
-```
-
 ### Interactive Mode
 
 ```bash
-# Start interactive session
-python client/fastmcp_groq_client.py
+python client/fastmcp_universal_client.py
 
-# Type commands naturally
 You: Sort all objects by size
 You: Arrange them in a triangle
 You: Tell me what you see
 ```
 
+---
+
+### Single Command Mode
+
+```bash
+# Run one example
+python client/fastmcp_universal_client.py \
+  --command "Sort objects by size"
+
+# Batch script
+for cmd in "Scan workspace" "Sort by size" "Create triangle"; do
+  python client/fastmcp_universal_client.py --command "$cmd"
+  sleep 2
+done
+```
+
+---
+
 ### Web GUI
 
 ```bash
-# Launch Gradio interface
-./launch_gui.sh --robot niryo --real
+python robot_gui/mcp_app.py --robot niryo
 
 # Use voice commands or text input
 # See live camera feed
@@ -849,7 +660,41 @@ You: Tell me what you see
 
 ---
 
-For more information, see:
+### Example Scripts
+
+```bash
+# Run specific example
+python examples/universal_examples.py workspace_scan
+
+# Run all examples
+python examples/universal_examples.py all
+
+# Compare LLM providers
+python examples/universal_examples.py compare_providers
+```
+
+---
+
+## Common Natural Language Commands
+
+```
+"What objects do you see?"
+"Pick up the pencil"
+"Move the red cube next to the blue square"
+"Sort all objects by size"
+"Arrange objects in a triangle"
+"What's the largest object?"
+"Place the smallest object in the center"
+"Find a safe place to put this"
+"Stack the small cube on the large cube"
+"Push the large box 5cm to the right"
+"Group objects by color"
+"Is there anything near [0.2, 0.0]?"
+```
+
+---
+
+For more information:
 - [API Reference](api.md) - Complete tool documentation
-- [Architecture Guide](README.md) - System design details
-- [Troubleshooting](troubleshooting.md) - Common issues
+- [Setup Guide](mcp_setup_guide.md) - Installation and configuration
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
