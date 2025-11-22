@@ -17,8 +17,7 @@ from typing import Any, Dict, List, Literal
 from dotenv import load_dotenv
 from fastmcp import Client
 from fastmcp.client.transports import SSETransport
-
-from client.llm_client import LLMClient
+from llm_client import LLMClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
