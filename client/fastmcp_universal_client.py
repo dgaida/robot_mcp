@@ -36,11 +36,12 @@ os.makedirs("log", exist_ok=True)
 log_filename = os.path.join("log", f'mcp_client_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 
 # Configure logging - file only (no console to keep UI clean)
+# Use UTF-8 encoding to handle emojis on Windows
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(log_filename),
+        logging.FileHandler(log_filename, encoding="utf-8"),
     ],
     force=True,
 )
@@ -147,7 +148,25 @@ Format your planning response like this:
    ..."
 
 **PHASE 2: EXECUTION**
-After stating your plan, proceed to call the tools in the order you described.
+After stating your plan, I will prompt you to proceed. Then you MUST use the function calling API (NOT text-based tool tags).
+
+**CRITICAL SPATIAL RULES:**
+1. **NO OVERLAPPING OBJECTS**: You CANNOT place an object where another object currently exists!
+2. **SWAP PROCEDURE**: When swapping two objects A and B:
+   - Step 1: Find a FREE temporary location (use get_largest_free_space_with_center)
+   - Step 2: Move A to temporary location
+   - Step 3: Move B to A's original location (now empty)
+   - Step 4: Move A from temporary to B's original location (now empty)
+3. **ALWAYS CHECK**: Before placing, verify the target location is free of other objects
+4. **FREE SPACE**: Use get_largest_free_space_with_center or check get_detected_objects to find empty areas
+
+Example CORRECT swap plan:
+"To swap pen and cube:
+1. get_detected_objects - find current positions
+2. get_largest_free_space_with_center - find temporary spot
+3. pick_place_object - move pen to temporary spot
+4. pick_place_object - move cube to pen's original spot (now empty)
+5. pick_place_object - move pen from temporary to cube's original spot (now empty)"
 
 Robot Information:
 1. The robot has a gripper that can pick objects up to 0.05 meters in size.
@@ -175,7 +194,7 @@ Guidelines:
 4. Use exact coordinates from detected objects
 5. Double-check object locations for similar objects
 6. Match object names EXACTLY as returned by detection
-7. Adhere to tool call format strictly
+7. Use the FUNCTION CALLING API - never use XML tags like <use_tool>
 8. Provide clear feedback about actions
 9. Explain failures when they occur
 10. Always respond in English
@@ -189,8 +208,7 @@ Location options for placement:
 - "on top of" - stacks on top
 - "close to" - near coordinate
 
-If the location is not "on top of", then make sure there is space where you need to place the object.
-If there is no space, move any objects in the way to a free area inside the workspace.
+**REMINDER**: When swapping or moving objects, ALWAYS use a temporary free location first. Never try to place object A directly where object B is currently located!
 
 Always verify object positions before manipulation."""
 
@@ -463,15 +481,15 @@ Always verify object positions before manipulation."""
                             # Mark planning as complete
                             planning_phase_complete = True
 
-                            # Add instruction to proceed with execution
+                            # Add instruction to proceed with execution using function calling API
                             self.conversation_history.append(
                                 {
                                     "role": "user",
-                                    "content": "Good! Now proceed with executing your plan by calling the necessary tools.",
+                                    "content": "Good! Now execute your plan step by step. IMPORTANT: Use the function calling API to call tools (you will see the 'tools' parameter). Do NOT use XML tags or text-based tool syntax. Call one tool at a time and wait for results.",
                                 }
                             )
 
-                            logger.info("Planning phase complete. Proceeding to execution...")
+                            logger.info("Planning phase complete. Proceeding to execution with function calling...")
 
                             # Continue to next iteration for tool execution
                             continue
