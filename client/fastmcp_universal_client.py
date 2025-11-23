@@ -354,10 +354,9 @@ Always verify object positions before manipulation."""
         """Process a user message and return assistant's response.
 
         This method handles the complete interaction loop with chain-of-thought:
-        1. Sends user message to LLM
-        2. LLM responds with planning phase (task understanding + execution plan)
-        3. LLM proceeds to call tools
-        4. Returns final response to user
+        1. ENFORCES planning phase: LLM must explain reasoning first
+        2. Then allows tool calls after planning is complete
+        3. Returns final response to user
 
         Args:
             user_message: User's input message
@@ -381,7 +380,7 @@ Always verify object positions before manipulation."""
 
         max_iterations = 15  # Increased to accommodate planning phase
         iteration = 0
-        planning_phase_shown = False
+        planning_phase_complete = False
 
         while iteration < max_iterations:
             iteration += 1
@@ -401,7 +400,7 @@ Always verify object positions before manipulation."""
                     # Check if this is planning phase
                     is_planning, planning_text = self._extract_planning_phase(response_text)
 
-                    if is_planning and not planning_phase_shown:
+                    if is_planning and not planning_phase_complete:
                         logger.info("=" * 80)
                         logger.info("CHAIN-OF-THOUGHT: PLANNING PHASE")
                         logger.info(planning_text)
@@ -413,7 +412,7 @@ Always verify object positions before manipulation."""
                         print(planning_text)
                         print("=" * 70 + "\n")
 
-                        planning_phase_shown = True
+                        planning_phase_complete = True
 
                     # Add to history and return
                     self.conversation_history.append({"role": "assistant", "content": response_text})
@@ -429,23 +428,24 @@ Always verify object positions before manipulation."""
 
                     tools_formatted = self._convert_tools_to_function_format()
 
-                    response = self.llm_client.client.chat.completions.create(
-                        model=self.llm_client.llm,
-                        messages=messages,
-                        tools=tools_formatted,
-                        tool_choice="auto",
-                        max_tokens=self.llm_client.max_tokens,
-                        temperature=self.llm_client.temperature,
-                    )
+                    # PHASE 1: FORCE PLANNING - Don't provide tools on first call
+                    if not planning_phase_complete:
+                        logger.info("PHASE 1: Requesting planning (tools disabled)")
 
-                    assistant_message = response.choices[0].message
+                        # Call without tools to force text response (planning)
+                        response = self.llm_client.client.chat.completions.create(
+                            model=self.llm_client.llm,
+                            messages=messages,
+                            max_tokens=self.llm_client.max_tokens,
+                            temperature=self.llm_client.temperature,
+                        )
 
-                    # Check if this is a planning phase response (text only, no tool calls)
-                    if assistant_message.content and not assistant_message.tool_calls:
-                        is_planning, planning_text = self._extract_planning_phase(assistant_message.content)
+                        assistant_message = response.choices[0].message
 
-                        if is_planning and not planning_phase_shown:
-                            # This is the planning phase - log and display it
+                        if assistant_message.content:
+                            planning_text = assistant_message.content
+
+                            # Log and display the planning
                             logger.info("=" * 80)
                             logger.info("CHAIN-OF-THOUGHT: PLANNING PHASE")
                             logger.info(planning_text)
@@ -457,28 +457,42 @@ Always verify object positions before manipulation."""
                             print(planning_text)
                             print("=" * 70 + "\n")
 
-                            planning_phase_shown = True
+                            # Add planning to history
+                            self.conversation_history.append({"role": "assistant", "content": planning_text})
 
-                            # Add to history
-                            self.conversation_history.append({"role": "assistant", "content": assistant_message.content})
+                            # Mark planning as complete
+                            planning_phase_complete = True
+
+                            # Add instruction to proceed with execution
+                            self.conversation_history.append(
+                                {
+                                    "role": "user",
+                                    "content": "Good! Now proceed with executing your plan by calling the necessary tools.",
+                                }
+                            )
+
+                            logger.info("Planning phase complete. Proceeding to execution...")
 
                             # Continue to next iteration for tool execution
                             continue
-                        else:
-                            # Final response without planning indicators
-                            self.conversation_history.append({"role": "assistant", "content": assistant_message.content})
 
-                            logger.info(f"Final assistant response: {assistant_message.content}")
-                            logger.info("=" * 80)
+                    # PHASE 2: EXECUTION - Now allow tool calls
+                    logger.info("PHASE 2: Execution (tools enabled)")
 
-                            return assistant_message.content
+                    response = self.llm_client.client.chat.completions.create(
+                        model=self.llm_client.llm,
+                        messages=messages,
+                        tools=tools_formatted,
+                        tool_choice="auto",
+                        max_tokens=self.llm_client.max_tokens,
+                        temperature=self.llm_client.temperature,
+                    )
+
+                    assistant_message = response.choices[0].message
 
                     # Check if model wants to call tools
                     if assistant_message.tool_calls:
                         logger.info(f"LLM requested {len(assistant_message.tool_calls)} tool call(s)")
-
-                        if not planning_phase_shown:
-                            logger.warning("Tool calls without planning phase - this should not happen")
 
                         # Add assistant's tool call request to history
                         self.conversation_history.append(
