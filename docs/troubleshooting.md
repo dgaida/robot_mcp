@@ -536,7 +536,7 @@ uname -a  # Linux/Mac
 ### Resources
 
 - **GitHub Issues:** https://github.com/dgaida/robot_mcp/issues
-- **Documentation:** [README.md](../README.md), [docs/README.md](README.md)
+- **Architecture:** [Architecture Guide](mcp_api_reference.md#system-architecture)
 - **Examples:** [docs/examples.md](examples.md)
 - **API Reference:** [docs/api.md](api.md)
 

@@ -57,9 +57,10 @@ dev = [
 
 # Documentation
 docs = [
-    "sphinx>=5.0.0",
-    "sphinx-rtd-theme>=1.2.0",
-    "myst-parser>=1.0.0",
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "pymdown-extensions>=10.0.0",
+    "mkdocs-autorefs>=0.5.0",
 ]
 
 # All dependencies combined
@@ -68,7 +69,7 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dgaida/robot_mcp"
+Homepage = "https://dgaida.github.io/robot_mcp/"
 Documentation = "https://github.com/dgaida/robot_mcp/blob/main/README.md"
 Repository = "https://github.com/dgaida/robot_mcp"
 "Bug Tracker" = "https://github.com/dgaida/robot_mcp/issues"

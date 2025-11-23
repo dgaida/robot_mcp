@@ -425,7 +425,7 @@ def speak(text: str) -> str:
 
 # python server/fastmcp_robot_server.py --no-simulation
 # für realen Roboter
-# python server/fastmcp_robot_server.py 
+# python server/fastmcp_robot_server.py
 def main():
     """Main entry point when running as script."""
     parser = argparse.ArgumentParser(description="FastMCP Robot Server")
@@ -437,7 +437,7 @@ def main():
     parser.add_argument("--verbose", action="store_true")
 
     args = parser.parse_args()
-    
+
     print(args)
 
     # Initialize environment

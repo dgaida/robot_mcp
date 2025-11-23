@@ -701,6 +701,6 @@ speak("Task completed")
 
 For more information, see:
 - [Main Documentation](../README.md)
-- [Architecture Guide](README.md)
+- [Architecture Guide](mcp_api_reference.md#system-architecture)
 - [Examples](examples.md)
 - [Troubleshooting](troubleshooting.md)
