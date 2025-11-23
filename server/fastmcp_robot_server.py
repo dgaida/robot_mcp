@@ -1,9 +1,6 @@
 # fastmcp_robot_server.py
 import argparse
-
-# from robot_environment.objects.object import Object
-# if TYPE_CHECKING:
-#     from robot_environment.robot.robot_api import Location
+import functools
 import logging
 import os
 from datetime import datetime
@@ -11,37 +8,105 @@ from typing import Dict, List, Optional, Union
 
 from fastmcp import FastMCP
 from robot_environment import Environment
-from robot_environment.robot.robot_api import Location
+from robot_workspace import Location
 
-# Configure logging to file (NOT to stdout/stderr!)
+# ============================================================================
+# LOGGING SETUP - Configure BEFORE any imports that might use logging
+# ============================================================================
+
+# Create log directory if it doesn't exist
+os.makedirs("log", exist_ok=True)
+
+# Single log file for entire system
 log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+
+# Configure root logger - this ensures ALL loggers use the same file
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(log_filename),
-        # DO NOT add StreamHandler - it would interfere with MCP communication
+        # DO NOT add StreamHandler - interferes with MCP communication
     ],
+    force=True,  # Override any existing configuration
 )
+
+# Get logger for this module
 logger = logging.getLogger("FastMCPRobotServer")
+
+# Also set level for robot_environment package
+logging.getLogger("RobotUniversalMCPClient").setLevel(logging.INFO)
+logging.getLogger("robot_environment").setLevel(logging.INFO)
+logging.getLogger("visual_detect_segment").setLevel(logging.INFO)
+
+# Store log filename for reference
+LOG_FILE = log_filename
+
+logger.info("=" * 80)
+logger.info(f"FastMCP Robot Server starting - Log file: {log_filename}")
+logger.info("=" * 80)
+
+# ============================================================================
+# MCP SETUP
+# ============================================================================
 
 # Init MCP
 mcp = FastMCP("robot-environment")
 
-# Environment-Setup (vereinfacht, Parameter kannst du anpassen)
-# env = Environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=True)
-# robot = env.robot()
-
-# Global environment - wird später initialisiert
+# Global environment - initialized later
 env = None
 robot = None
+
+
+def log_tool_call(func):
+    """Decorator to log all tool calls with parameters and results."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        tool_name = func.__name__
+
+        # Log incoming call
+        logger.info("-" * 60)
+        logger.info(f"TOOL CALL: {tool_name}")
+
+        # Log arguments (be careful with sensitive data)
+        if args:
+            logger.info(f"  Args: {args}")
+        if kwargs:
+            logger.info(f"  Kwargs: {kwargs}")
+
+        try:
+            # Execute tool
+            result = func(*args, **kwargs)
+
+            # Log result
+            logger.info(f"  Result: {result}")
+            logger.info("  Status: SUCCESS")
+
+            return result
+
+        except Exception as e:
+            # Log error
+            logger.error(f"  Error: {str(e)}", exc_info=True)
+            logger.info("  Status: FAILED")
+            raise
+        finally:
+            logger.info("-" * 60)
+
+    return wrapper
 
 
 def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False):
     """Initialize the robot environment with given parameters."""
     global env, robot
 
-    logger.info(f"Initializing environment: robot={robot_id}, simulation={use_simulation}")
+    logger.info("=" * 60)
+    logger.info("ENVIRONMENT INITIALIZATION")
+    logger.info(f"  Robot ID: {robot_id}")
+    logger.info(f"  Simulation: {use_simulation}")
+    logger.info(f"  Verbose: {verbose}")
+    logger.info(f"  Camera Thread: {start_camera_thread}")
+    logger.info("=" * 60)
 
     env = Environment(
         el_api_key=el_api_key,
@@ -53,12 +118,16 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
     robot = env.robot()
 
     logger.info("Environment initialized successfully")
+    logger.info("=" * 60)
 
 
+# ============================================================================
 # ENVIRONMENT TOOLS
+# ============================================================================
 
 
 @mcp.tool
+@log_tool_call
 def get_largest_free_space_with_center() -> tuple[float, float, float]:
     """
     Determines the largest free space in the workspace in square metres and its center coordinate in metres.
@@ -86,6 +155,7 @@ def get_largest_free_space_with_center() -> tuple[float, float, float]:
 
 
 @mcp.tool
+@log_tool_call
 def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> Optional[List[float]]:
     """
     Get the world coordinate of a special point of the given workspace.
@@ -106,6 +176,7 @@ def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> Option
 
 
 @mcp.tool
+@log_tool_call
 def get_object_labels_as_string() -> str:
     """
     Returns all object labels that the object detection model is able to detect as a comma separated string.
@@ -118,6 +189,7 @@ def get_object_labels_as_string() -> str:
 
 
 @mcp.tool
+@log_tool_call
 def add_object_name2object_labels(object_name: str) -> str:
     """
     Call this method if the user wants to add another object to the list of recognizable objects. Adds the
@@ -132,10 +204,13 @@ def add_object_name2object_labels(object_name: str) -> str:
     return env.add_object_name2object_labels(object_name)
 
 
+# ============================================================================
 # ROBOT TOOLS
+# ============================================================================
 
 
 @mcp.tool
+@log_tool_call
 def pick_place_object(
     object_name: str,
     pick_coordinate: list[float],
@@ -187,6 +262,7 @@ def pick_place_object(
 
 
 @mcp.tool
+@log_tool_call
 def pick_object(object_name: str, pick_coordinate: List) -> bool:
     """
     Command the pick-and-place robot arm to pick up a specific object using its gripper. The gripper will move to
@@ -203,12 +279,13 @@ def pick_object(object_name: str, pick_coordinate: List) -> bool:
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
         coordinates to identify the object's exact position.
     Returns:
-        bool: True
+        bool: True on success
     """
     return robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate)
 
 
 @mcp.tool
+@log_tool_call
 def place_object(place_coordinate: List, location: Union[Location, str, None] = None) -> bool:
     """
     Instruct the pick-and-place robot arm to place a picked object at the specified 'place_coordinate'. The
@@ -226,13 +303,13 @@ def place_object(place_coordinate: List, location: Union[Location, str, None] = 
         being at the 'place_coordinate'. Possible positions: 'left next to', 'right next to', 'above', 'below',
         'on top of', 'inside', or None. Set to None, if there is no location given in the task.
     Returns:
-        bool: True
+        bool: True on success
     """
-
     return robot.place_object(place_coordinate=place_coordinate, location=location)
 
 
 @mcp.tool
+@log_tool_call
 def push_object(object_name: str, push_coordinate: List, direction: str, distance: float):
     """
     Direct the pick-and-place robot arm to push a specific object to a new position.
@@ -249,19 +326,20 @@ def push_object(object_name: str, push_coordinate: List, direction: str, distanc
         distance: The distance (in millimeters) to push the object in the specified direction.
         Ensure the value is within the robot's operational range.
     Returns:
-        bool: True
+        bool: True on success
     """
     return robot.push_object(object_name, push_coordinate, direction, distance)
 
 
 @mcp.tool
+@log_tool_call
 def move2observation_pose(workspace_id: str) -> None:
     """
     The robot will move to a pose where it can observe (the gripper hovers over) the workspace given by workspace_id.
     Before a robot can pick up or place an object in a workspace, it must first move to this observation pose of the corresponding workspace.
 
     Args:
-        workspace_id: id of the workspace
+        workspace_id: ID of the workspace
 
     Returns:
         None
@@ -270,6 +348,7 @@ def move2observation_pose(workspace_id: str) -> None:
 
 
 @mcp.tool
+@log_tool_call
 def clear_collision_detected() -> None:
     """
     Reset the internal flag "collision_detected" of the Niryo robot. You need to call this after a
@@ -281,10 +360,13 @@ def clear_collision_detected() -> None:
     robot.robot().robot_ctrl().clear_collison_detected()
 
 
-# OBJECTS TOOLS
+# ============================================================================
+# OBJECT DETECTION TOOLS
+# ============================================================================
 
 
 @mcp.tool
+@log_tool_call
 def get_detected_objects(
     location: Union[Location, str] = Location.NONE,
     coordinate: List[float] = None,
@@ -309,13 +391,12 @@ def get_detected_objects(
         Optional[List[Dict]]: list of objects detected by the camera in the workspace.
     """
     detected_objects = env.get_detected_objects()
-
     objects = detected_objects.get_detected_objects_serializable(location, coordinate, label)
-
     return objects
 
 
 @mcp.tool
+@log_tool_call
 def get_detected_object(coordinate: List[float], label: Optional[str] = None) -> Optional[Dict]:
     """
     Retrieves a detected object at or near a specified world coordinate, optionally filtering by label.
@@ -334,11 +415,11 @@ def get_detected_object(coordinate: List[float], label: Optional[str] = None) ->
         Returns `None` if no such object is found.
     """
     detected_objects = env.get_detected_objects()
-
     return detected_objects.get_detected_object(coordinate, label, True)
 
 
 @mcp.tool
+@log_tool_call
 def get_largest_detected_object() -> tuple[List[Dict], float]:
     """
     Returns the largest detected object based on its size in square meters.
@@ -349,11 +430,11 @@ def get_largest_detected_object() -> tuple[List[Dict], float]:
             - largest_size_m2 (float): The size of the largest object in square meters.
     """
     detected_objects = env.get_detected_objects()
-
     return detected_objects.get_largest_detected_object(True)
 
 
 @mcp.tool
+@log_tool_call
 def get_smallest_detected_object() -> tuple[List[Dict], float]:
     """
     Returns the smallest detected object based on its size in square meters.
@@ -364,11 +445,11 @@ def get_smallest_detected_object() -> tuple[List[Dict], float]:
             - smallest_size_m2 (float): The size of the smallest object in square meters.
     """
     detected_objects = env.get_detected_objects()
-
     return detected_objects.get_smallest_detected_object(True)
 
 
 @mcp.tool
+@log_tool_call
 def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
     """
     Returns the detected objects sorted by size in square meters.
@@ -381,7 +462,6 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
         List[Dict]: The list of detected objects sorted by size.
     """
     detected_objects = env.get_detected_objects()
-
     return detected_objects.get_detected_objects_sorted(ascending, True)
 
 
@@ -416,21 +496,32 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
 #     return myobject.label()
 
 
+# ============================================================================
+# FEEDBACK TOOLS
+# ============================================================================
+
+
 @mcp.tool
+@log_tool_call
 def speak(text: str) -> str:
     """Make the robot speak a message using text-to-speech."""
     env.oralcom_call_text2speech_async(text)
     return f"Speaking: {text}"
 
 
-# python server/fastmcp_robot_server.py --no-simulation
-# für realen Roboter
+# ============================================================================
+# MAIN ENTRY POINT
+# ============================================================================
+
+
 # python server/fastmcp_robot_server.py
+# für realen Roboter
+# python server/fastmcp_robot_server.py --no-simulation
 def main():
     """Main entry point when running as script."""
     parser = argparse.ArgumentParser(description="FastMCP Robot Server")
     parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo")
-    parser.add_argument("--no-simulation", action="store_false")
+    parser.add_argument("--no-simulation", action="store_false", dest="simulation")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--no-camera", action="store_true")
@@ -438,33 +529,59 @@ def main():
 
     args = parser.parse_args()
 
-    print(args)
+    # Log startup configuration
+    logger.info("=" * 80)
+    logger.info("SERVER CONFIGURATION")
+    logger.info(f"  Robot:        {args.robot}")
+    logger.info(f"  Simulation:   {args.simulation}")
+    logger.info(f"  Host:         {args.host}")
+    logger.info(f"  Port:         {args.port}")
+    logger.info(f"  Camera:       {not args.no_camera}")
+    logger.info(f"  Verbose:      {args.verbose}")
+    logger.info(f"  Log File:     {log_filename}")
+    logger.info("=" * 80)
+
+    # Print to console (since logging is file-only)
+    print("=" * 60)
+    print("STARTING FASTMCP ROBOT SERVER")
+    print("=" * 60)
+    print(f"Robot:        {args.robot}")
+    print(f"Simulation:   {args.simulation}")
+    print(f"Host:         {args.host}")
+    print(f"Port:         {args.port}")
+    print(f"Camera:       {not args.no_camera}")
+    print(f"Log File:     {log_filename}")
+    print("=" * 60)
+    print(f"\nServer running at: http://{args.host}:{args.port}")
+    print(f"SSE endpoint: http://{args.host}:{args.port}/sse")
+    print(f"\nMonitor logs: tail -f {log_filename}")
+    print("\nPress Ctrl+C to stop")
+    print("=" * 60 + "\n")
 
     # Initialize environment
     initialize_environment(
         el_api_key="",
-        use_simulation=not args.no_simulation,
+        use_simulation=args.simulation,
         robot_id=args.robot,
         verbose=args.verbose,
         start_camera_thread=not args.no_camera,
     )
 
-    print("=" * 60)
-    print("STARTING FASTMCP ROBOT SERVER")
-    print("=" * 60)
-    print(f"Robot:        {args.robot}")
-    print(f"Simulation:   {not args.no_simulation}")
-    print(f"Host:         {args.host}")
-    print(f"Port:         {args.port}")
-    print(f"Camera:       {not args.no_camera}")
-    print("=" * 60)
-    print(f"\nServer running at: http://{args.host}:{args.port}")
-    print(f"SSE endpoint: http://{args.host}:{args.port}/sse")
-    print("\nPress Ctrl+C to stop")
-    print("=" * 60 + "\n")
+    logger.info("Starting MCP server...")
 
     # Run server
-    mcp.run(transport="sse", host=args.host, port=args.port)
+    try:
+        mcp.run(transport="sse", host=args.host, port=args.port)
+    except KeyboardInterrupt:
+        logger.info("Server shutdown requested")
+        print("\n\nShutting down server...")
+    except Exception as e:
+        logger.error(f"Server error: {str(e)}", exc_info=True)
+        raise
+    finally:
+        logger.info("=" * 80)
+        logger.info("SERVER STOPPED")
+        logger.info("=" * 80)
 
 
 if __name__ == "__main__":

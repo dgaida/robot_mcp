@@ -12,6 +12,8 @@ This client uses the integrated LLMClient to support multiple LLM providers:
 import asyncio
 import json
 import logging
+import os
+from datetime import datetime
 from typing import Any, Dict, List, Literal
 
 from dotenv import load_dotenv
@@ -19,9 +21,34 @@ from fastmcp import Client
 from fastmcp.client.transports import SSETransport
 from llm_client import LLMClient
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# ============================================================================
+# LOGGING SETUP
+# ============================================================================
+
+# Create log directory if it doesn't exist
+os.makedirs("log", exist_ok=True)
+
+# Unique log file for this client session
+log_filename = os.path.join("log", f'mcp_client_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+
+# Configure logging - file only (no console to keep UI clean)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename),
+    ],
+    force=True,
+)
+
 logger = logging.getLogger("RobotUniversalMCPClient")
+
+# Also enable logging for LLM client
+logging.getLogger("llm_client").setLevel(logging.INFO)
+
+logger.info("=" * 80)
+logger.info(f"Universal MCP Client starting - Log file: {log_filename}")
+logger.info("=" * 80)
 
 
 class RobotUniversalMCPClient:
@@ -69,6 +96,14 @@ class RobotUniversalMCPClient:
             ...     model="gemini-2.0-flash"
             ... )
         """
+        logger.info("=" * 60)
+        logger.info("CLIENT INITIALIZATION")
+        logger.info(f"  API Choice: {api_choice or 'auto-detect'}")
+        logger.info(f"  Model: {model or 'default'}")
+        logger.info(f"  Temperature: {temperature}")
+        logger.info(f"  Max Tokens: {max_tokens}")
+        logger.info("=" * 60)
+
         # Initialize LLM client with multi-provider support
         self.llm_client = LLMClient(
             llm=model,
@@ -76,6 +111,10 @@ class RobotUniversalMCPClient:
             max_tokens=max_tokens,
             api_choice=api_choice,
         )
+
+        logger.info(f"Initialized with {self.llm_client}")
+        logger.info(f"  Provider: {self.llm_client.api_choice.upper()}")
+        logger.info(f"  Model: {self.llm_client.llm}")
 
         self.available_tools: List[Dict[str, Any]] = []
         self.conversation_history: List[Dict[str, str]] = []
@@ -123,28 +162,49 @@ Location options for placement:
 - "on top of" - stacks on top
 - "close to" - near coordinate
 
+If the location is not "on top of", then make sure there is space where you need to place the object.
+If there is no space, move any objects in the way to a free area inside the workspace.
+
 Always verify object positions before manipulation."""
 
         # Initialize FastMCP transport
         transport = SSETransport("http://127.0.0.1:8000/sse")
         self.client = Client(transport)
 
-        logger.info(f"Initialized with {self.llm_client}")
+        logger.info("Client initialization complete")
 
     async def connect(self):
         """Connect to FastMCP server and discover available tools."""
+        logger.info("=" * 60)
+        logger.info("CONNECTING TO SERVER")
+        logger.info("  Server URL: http://127.0.0.1:8000/sse")
+        logger.info("=" * 60)
+
         print("🤖 Connecting to FastMCP server...")
         await self.client.__aenter__()
 
         self.available_tools = await self.client.list_tools()
+
+        tool_names = [t.name for t in self.available_tools]
+        logger.info("Connected successfully")
+        logger.info(f"  Provider: {self.llm_client.api_choice.upper()}")
+        logger.info(f"  Model: {self.llm_client.llm}")
+        logger.info(f"  Available tools ({len(tool_names)}): {', '.join(tool_names)}")
+
         print(f"Connected! Using {self.llm_client.api_choice.upper()} API")
         print(f"Model: {self.llm_client.llm}")
-        print(f"Found {len(self.available_tools)} tools: {[t.name for t in self.available_tools]}")
+        print(f"Found {len(self.available_tools)} tools: {tool_names}")
 
     async def disconnect(self):
         """Disconnect from MCP server."""
+        logger.info("=" * 60)
+        logger.info("DISCONNECTING FROM SERVER")
+        logger.info("=" * 60)
+
         if hasattr(self, "client"):
             await self.client.__aexit__(None, None, None)
+
+        logger.info("Disconnected successfully")
         print("✓ Disconnected from MCP server")
 
     def _convert_tools_to_function_format(self) -> List[Dict[str, Any]]:
@@ -177,8 +237,9 @@ Always verify object positions before manipulation."""
         Returns:
             Tool result as string
         """
-        print(f"🔧 Calling tool: {tool_name}")
-        print(f"   Arguments: {json.dumps(arguments, indent=2)}")
+        logger.info("-" * 60)
+        logger.info(f"TOOL CALL: {tool_name}")
+        logger.info(f"  Arguments: {json.dumps(arguments, indent=2)}")
 
         try:
             result = await self.client.call_tool(tool_name, arguments)
@@ -187,13 +248,25 @@ Always verify object positions before manipulation."""
             if result.content:
                 text_results = [item.text for item in result.content if hasattr(item, "text")]
                 result_text = "\n".join(text_results)
+
+                logger.info(f"  Result: {result_text}")
+                logger.info("  Status: SUCCESS")
+                logger.info("-" * 60)
+
                 print(f"✓ Result: {result_text}\n")
                 return result_text
             else:
+                logger.info("  Result: Tool executed successfully (no output)")
+                logger.info("  Status: SUCCESS")
+                logger.info("-" * 60)
                 return "Tool executed successfully (no output)"
 
         except Exception as e:
             error_msg = f"Error calling tool {tool_name}: {str(e)}"
+            logger.error(f"  Error: {str(e)}", exc_info=True)
+            logger.info("  Status: FAILED")
+            logger.info("-" * 60)
+
             print(f"✗ {error_msg}\n")
             return error_msg
 
@@ -206,6 +279,8 @@ Always verify object positions before manipulation."""
         Returns:
             List of tool results for next LLM call
         """
+        logger.info(f"Processing {len(tool_calls)} tool call(s)")
+
         tool_results = []
 
         for tool_call in tool_calls:
@@ -252,6 +327,11 @@ Always verify object positions before manipulation."""
             >>> response = await client.chat("What objects do you see?")
             >>> print(response)
         """
+        logger.info("=" * 80)
+        logger.info("NEW CHAT MESSAGE")
+        logger.info(f"  User: {user_message}")
+        logger.info("=" * 80)
+
         # Add user message to history
         self.conversation_history.append({"role": "user", "content": user_message})
 
@@ -260,90 +340,104 @@ Always verify object positions before manipulation."""
 
         while iteration < max_iterations:
             iteration += 1
+            logger.info(f"--- Iteration {iteration}/{max_iterations} ---")
 
             # Prepare messages for LLM
             messages = [{"role": "system", "content": self.system_prompt}] + self.conversation_history
 
-            # Call LLM API (works with OpenAI, Groq, Gemini via compatibility)
+            # Call LLM API
             try:
-                # For Ollama, we need to handle differently (no function calling)
+                # For Ollama, handle differently (no function calling)
                 if self.llm_client.api_choice == "ollama":
-                    # Ollama doesn't support function calling yet
-                    # Fall back to text-based instruction following
+                    logger.info("Using Ollama (text-based mode)")
+
                     response_text = self.llm_client.chat_completion(messages)
 
                     # Add to history and return
                     self.conversation_history.append({"role": "assistant", "content": response_text})
+
+                    logger.info(f"Assistant response: {response_text}")
+                    logger.info("=" * 80)
+
                     return response_text
 
                 else:
                     # OpenAI, Groq, Gemini - all support function calling
-                    # Build function calling request
+                    logger.info(f"Using {self.llm_client.api_choice.upper()} with function calling")
+
                     tools_formatted = self._convert_tools_to_function_format()
 
-                    # Create a temporary client for function calling
-                    # (LLMClient doesn't expose this directly)
-                    if self.llm_client.api_choice in ["openai", "groq", "gemini"]:
-                        response = self.llm_client.client.chat.completions.create(
-                            model=self.llm_client.llm,
-                            messages=messages,
-                            tools=tools_formatted,
-                            tool_choice="auto",
-                            max_tokens=self.llm_client.max_tokens,
-                            temperature=self.llm_client.temperature,
+                    response = self.llm_client.client.chat.completions.create(
+                        model=self.llm_client.llm,
+                        messages=messages,
+                        tools=tools_formatted,
+                        tool_choice="auto",
+                        max_tokens=self.llm_client.max_tokens,
+                        temperature=self.llm_client.temperature,
+                    )
+
+                    assistant_message = response.choices[0].message
+
+                    # Check if model wants to call tools
+                    if assistant_message.tool_calls:
+                        logger.info(f"LLM requested {len(assistant_message.tool_calls)} tool call(s)")
+
+                        # Add assistant's tool call request to history
+                        self.conversation_history.append(
+                            {
+                                "role": "assistant",
+                                "content": assistant_message.content or "",
+                                "tool_calls": [
+                                    {
+                                        "id": tc.id,
+                                        "type": "function",
+                                        "function": {
+                                            "name": tc.function.name,
+                                            "arguments": tc.function.arguments,
+                                        },
+                                    }
+                                    for tc in assistant_message.tool_calls
+                                ],
+                            }
                         )
 
-                        assistant_message = response.choices[0].message
+                        # Process tool calls
+                        tool_results = await self.process_tool_calls(assistant_message.tool_calls)
 
-                        # Check if model wants to call tools
-                        if assistant_message.tool_calls:
-                            # Add assistant's tool call request to history
-                            self.conversation_history.append(
-                                {
-                                    "role": "assistant",
-                                    "content": assistant_message.content or "",
-                                    "tool_calls": [
-                                        {
-                                            "id": tc.id,
-                                            "type": "function",
-                                            "function": {
-                                                "name": tc.function.name,
-                                                "arguments": tc.function.arguments,
-                                            },
-                                        }
-                                        for tc in assistant_message.tool_calls
-                                    ],
-                                }
-                            )
+                        # Add tool results to history
+                        self.conversation_history.extend(tool_results)
 
-                            # Process tool calls
-                            tool_results = await self.process_tool_calls(assistant_message.tool_calls)
+                        # Continue loop for final response
+                        continue
 
-                            # Add tool results to history
-                            self.conversation_history.extend(tool_results)
+                    else:
+                        # No more tool calls, return final response
+                        final_response = assistant_message.content or "I completed the task."
 
-                            # Continue loop for final response
-                            continue
+                        logger.info(f"Final assistant response: {final_response}")
+                        logger.info("=" * 80)
 
-                        else:
-                            # No more tool calls, return final response
-                            final_response = assistant_message.content or "I completed the task."
+                        # Add to history
+                        self.conversation_history.append({"role": "assistant", "content": final_response})
 
-                            # Add to history
-                            self.conversation_history.append({"role": "assistant", "content": final_response})
-
-                            return final_response
+                        return final_response
 
             except Exception as e:
                 error_msg = f"Error calling LLM API: {str(e)}"
-                print(f"✗ {error_msg}")
                 logger.error(error_msg, exc_info=True)
+                logger.info("=" * 80)
+
+                print(f"✗ {error_msg}")
                 return error_msg
 
+        logger.warning("Maximum iterations reached")
+        logger.info("=" * 80)
         return "Maximum iterations reached. Task may be incomplete."
 
     def print_available_tools(self):
         """Print all available tools."""
+        logger.info("Listing available tools")
+
         print("\n📋 Available Tools:")
         print("=" * 60)
         for tool in self.available_tools:
@@ -353,10 +447,15 @@ Always verify object positions before manipulation."""
 
     async def interactive_mode(self):
         """Run interactive chat mode."""
+        logger.info("=" * 60)
+        logger.info("INTERACTIVE MODE STARTED")
+        logger.info("=" * 60)
+
         print("\n" + "=" * 60)
         print("🤖 ROBOT CONTROL ASSISTANT (Universal LLM)")
         print("=" * 60)
         print(f"\nUsing: {self.llm_client.api_choice.upper()} - {self.llm_client.llm}")
+        print(f"Log file: {log_filename}")
         print("\nType your commands in natural language.")
         print("Examples:")
         print("  - 'What objects do you see?'")
@@ -376,7 +475,10 @@ Always verify object positions before manipulation."""
                 if not user_input:
                     continue
 
+                logger.info(f"User input: {user_input}")
+
                 if user_input.lower() in ["quit", "exit", "q"]:
+                    logger.info("User requested exit")
                     print("\n👋 Goodbye!")
                     break
 
@@ -386,10 +488,13 @@ Always verify object positions before manipulation."""
 
                 if user_input.lower() == "clear":
                     self.conversation_history = []
+                    logger.info("Conversation history cleared")
                     print("✓ Conversation history cleared.\n")
                     continue
 
                 if user_input.lower() == "switch":
+                    logger.info("User requested provider switch")
+
                     print("\n🔄 Current provider:", self.llm_client.api_choice.upper())
                     print("Available: openai, groq, gemini, ollama")
                     new_api = input("Switch to (or press Enter to cancel): ").strip().lower()
@@ -401,8 +506,10 @@ Always verify object positions before manipulation."""
                                 temperature=self.llm_client.temperature,
                                 max_tokens=self.llm_client.max_tokens,
                             )
+                            logger.info(f"Switched to {new_api.upper()} - {self.llm_client.llm}")
                             print(f"✓ Switched to {new_api.upper()} - {self.llm_client.llm}\n")
                         except Exception as e:
+                            logger.error(f"Failed to switch provider: {e}", exc_info=True)
                             print(f"✗ Failed to switch: {e}\n")
                     continue
 
@@ -415,11 +522,16 @@ Always verify object positions before manipulation."""
                 print("-" * 60 + "\n")
 
             except KeyboardInterrupt:
+                logger.info("Interrupted by user (Ctrl+C)")
                 print("\n\n👋 Goodbye!")
                 break
             except Exception as e:
+                logger.error(f"Interactive mode error: {e}", exc_info=True)
                 print(f"\n✗ Error: {e}\n")
-                logger.error("Interactive mode error", exc_info=True)
+
+        logger.info("=" * 60)
+        logger.info("INTERACTIVE MODE ENDED")
+        logger.info("=" * 60)
 
     async def run_command(self, command: str) -> str:
         """Run a single command and return response.
@@ -430,7 +542,16 @@ Always verify object positions before manipulation."""
         Returns:
             Assistant's response
         """
+        logger.info("=" * 60)
+        logger.info("SINGLE COMMAND MODE")
+        logger.info(f"  Command: {command}")
+        logger.info("=" * 60)
+
         response = await self.chat(command)
+
+        logger.info(f"Command completed. Response: {response}")
+        logger.info("=" * 60)
+
         return response
 
 
@@ -483,6 +604,11 @@ Supported Providers:
 
     args = parser.parse_args()
 
+    logger.info("=" * 80)
+    logger.info("MAIN ENTRY POINT")
+    logger.info(f"  Arguments: {vars(args)}")
+    logger.info("=" * 80)
+
     # Create client
     client = RobotUniversalMCPClient(
         api_choice=args.api,
@@ -497,22 +623,29 @@ Supported Providers:
 
         if args.command:
             # Single command mode
+            logger.info("Running in single command mode")
             print(f"You: {args.command}\n")
             response = await client.run_command(args.command)
             print(f"\n🤖 Assistant: {response}\n")
         else:
             # Interactive mode
+            logger.info("Running in interactive mode")
             await client.interactive_mode()
 
     except KeyboardInterrupt:
+        logger.info("Interrupted by user")
         print("\n\nInterrupted by user")
     except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
         print(f"\n✗ Error: {e}")
         import traceback
 
         traceback.print_exc()
     finally:
         await client.disconnect()
+        logger.info("=" * 80)
+        logger.info(f"CLIENT SESSION ENDED - Log saved to: {log_filename}")
+        logger.info("=" * 80)
 
 
 if __name__ == "__main__":
