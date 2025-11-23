@@ -1,12 +1,16 @@
 # fastmcp_universal_client.py
 """
-Universal FastMCP Client with Multi-LLM Support
+Universal FastMCP Client with Multi-LLM Support and Chain-of-Thought Prompting
 
 This client uses the integrated LLMClient to support multiple LLM providers:
 - OpenAI (GPT-4o, GPT-4o-mini)
 - Groq (Llama, Mixtral, Kimi, Gemma)
 - Google Gemini (Gemini 2.0/2.5)
 - Ollama (Local models)
+
+Features chain-of-thought prompting where the LLM explicitly states:
+1. Understanding of the task
+2. Planning steps before execution
 """
 
 import asyncio
@@ -52,10 +56,12 @@ logger.info("=" * 80)
 
 
 class RobotUniversalMCPClient:
-    """Universal MCP Client supporting multiple LLM providers.
+    """Universal MCP Client supporting multiple LLM providers with Chain-of-Thought.
 
     This client integrates with FastMCP server and uses LLMClient for
     flexible LLM provider selection (OpenAI, Groq, Gemini, Ollama).
+
+    Features chain-of-thought prompting for better transparency and reasoning.
 
     Attributes:
         llm_client: LLMClient instance for LLM interactions
@@ -119,8 +125,29 @@ class RobotUniversalMCPClient:
         self.available_tools: List[Dict[str, Any]] = []
         self.conversation_history: List[Dict[str, str]] = []
 
-        # System prompt for robot control
-        self.system_prompt = """You are a helpful robot control assistant. You have access to various tools to control a robotic arm and detect objects in its workspace.
+        # Enhanced system prompt with chain-of-thought instructions
+        self.system_prompt = """You are a helpful robot control assistant with explicit reasoning capabilities. You have access to various tools to control a robotic arm and detect objects in its workspace.
+
+**CRITICAL: Chain-of-Thought Reasoning Protocol**
+
+When the user gives you a task, you MUST follow this two-phase approach:
+
+**PHASE 1: PLANNING (Required before any tool calls)**
+Before calling ANY tools, you must explicitly state:
+1. **Task Understanding**: Restate the user's goal in your own words
+2. **Analysis**: Break down what information you need and what actions are required
+3. **Execution Plan**: List the specific tools you will call and in what order
+
+Format your planning response like this:
+"🎯 Task Understanding: [restate goal]
+📋 Analysis: [what's needed]
+🔧 Execution Plan:
+   Step 1: [tool_name] - [why]
+   Step 2: [tool_name] - [why]
+   ..."
+
+**PHASE 2: EXECUTION**
+After stating your plan, proceed to call the tools in the order you described.
 
 Robot Information:
 1. The robot has a gripper that can pick objects up to 0.05 meters in size.
@@ -142,8 +169,8 @@ Key capabilities:
 - Get workspace information
 
 Guidelines:
-1. If task is not in English, translate to English first
-2. Use available tools to accomplish tasks
+1. ALWAYS start with PHASE 1 (Planning) before calling tools
+2. If task is not in English, translate to English first
 3. Always call get_detected_objects first before pick/place
 4. Use exact coordinates from detected objects
 5. Double-check object locations for similar objects
@@ -307,13 +334,30 @@ Always verify object positions before manipulation."""
 
         return tool_results
 
+    def _extract_planning_phase(self, content: str) -> tuple[bool, str]:
+        """Extract and identify if response contains planning phase.
+
+        Args:
+            content: Assistant's response content
+
+        Returns:
+            Tuple of (is_planning_phase, planning_text)
+        """
+        # Check for planning indicators
+        planning_indicators = ["🎯", "📋", "🔧", "Task Understanding:", "Analysis:", "Execution Plan:"]
+
+        has_planning = any(indicator in content for indicator in planning_indicators)
+
+        return has_planning, content
+
     async def chat(self, user_message: str) -> str:
         """Process a user message and return assistant's response.
 
-        This method handles the complete interaction loop:
+        This method handles the complete interaction loop with chain-of-thought:
         1. Sends user message to LLM
-        2. Processes any tool calls requested by LLM
-        3. Returns final response to user
+        2. LLM responds with planning phase (task understanding + execution plan)
+        3. LLM proceeds to call tools
+        4. Returns final response to user
 
         Args:
             user_message: User's input message
@@ -335,8 +379,9 @@ Always verify object positions before manipulation."""
         # Add user message to history
         self.conversation_history.append({"role": "user", "content": user_message})
 
-        max_iterations = 10  # Prevent infinite loops
+        max_iterations = 15  # Increased to accommodate planning phase
         iteration = 0
+        planning_phase_shown = False
 
         while iteration < max_iterations:
             iteration += 1
@@ -352,6 +397,23 @@ Always verify object positions before manipulation."""
                     logger.info("Using Ollama (text-based mode)")
 
                     response_text = self.llm_client.chat_completion(messages)
+
+                    # Check if this is planning phase
+                    is_planning, planning_text = self._extract_planning_phase(response_text)
+
+                    if is_planning and not planning_phase_shown:
+                        logger.info("=" * 80)
+                        logger.info("CHAIN-OF-THOUGHT: PLANNING PHASE")
+                        logger.info(planning_text)
+                        logger.info("=" * 80)
+
+                        print("\n" + "=" * 70)
+                        print("💭 CHAIN-OF-THOUGHT REASONING")
+                        print("=" * 70)
+                        print(planning_text)
+                        print("=" * 70 + "\n")
+
+                        planning_phase_shown = True
 
                     # Add to history and return
                     self.conversation_history.append({"role": "assistant", "content": response_text})
@@ -378,9 +440,45 @@ Always verify object positions before manipulation."""
 
                     assistant_message = response.choices[0].message
 
+                    # Check if this is a planning phase response (text only, no tool calls)
+                    if assistant_message.content and not assistant_message.tool_calls:
+                        is_planning, planning_text = self._extract_planning_phase(assistant_message.content)
+
+                        if is_planning and not planning_phase_shown:
+                            # This is the planning phase - log and display it
+                            logger.info("=" * 80)
+                            logger.info("CHAIN-OF-THOUGHT: PLANNING PHASE")
+                            logger.info(planning_text)
+                            logger.info("=" * 80)
+
+                            print("\n" + "=" * 70)
+                            print("💭 CHAIN-OF-THOUGHT REASONING")
+                            print("=" * 70)
+                            print(planning_text)
+                            print("=" * 70 + "\n")
+
+                            planning_phase_shown = True
+
+                            # Add to history
+                            self.conversation_history.append({"role": "assistant", "content": assistant_message.content})
+
+                            # Continue to next iteration for tool execution
+                            continue
+                        else:
+                            # Final response without planning indicators
+                            self.conversation_history.append({"role": "assistant", "content": assistant_message.content})
+
+                            logger.info(f"Final assistant response: {assistant_message.content}")
+                            logger.info("=" * 80)
+
+                            return assistant_message.content
+
                     # Check if model wants to call tools
                     if assistant_message.tool_calls:
                         logger.info(f"LLM requested {len(assistant_message.tool_calls)} tool call(s)")
+
+                        if not planning_phase_shown:
+                            logger.warning("Tool calls without planning phase - this should not happen")
 
                         # Add assistant's tool call request to history
                         self.conversation_history.append(
@@ -452,10 +550,12 @@ Always verify object positions before manipulation."""
         logger.info("=" * 60)
 
         print("\n" + "=" * 60)
-        print("🤖 ROBOT CONTROL ASSISTANT (Universal LLM)")
+        print("🤖 ROBOT CONTROL ASSISTANT (Universal LLM + CoT)")
         print("=" * 60)
         print(f"\nUsing: {self.llm_client.api_choice.upper()} - {self.llm_client.llm}")
         print(f"Log file: {log_filename}")
+        print("\n✨ Chain-of-Thought Enabled ✨")
+        print("The assistant will explain its reasoning before acting.")
         print("\nType your commands in natural language.")
         print("Examples:")
         print("  - 'What objects do you see?'")
@@ -515,7 +615,7 @@ Always verify object positions before manipulation."""
 
                 print()  # Empty line for readability
 
-                # Process the message
+                # Process the message (will show chain-of-thought reasoning)
                 response = await self.chat(user_input)
 
                 print(f"\n🤖 Assistant: {response}\n")
@@ -562,7 +662,7 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Universal MCP Client with Multi-LLM Support",
+        description="Universal MCP Client with Multi-LLM Support and Chain-of-Thought",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
