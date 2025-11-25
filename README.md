@@ -4,6 +4,7 @@ Natural language robot control using **FastMCP** and **Multi-LLM Support** (Open
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/dgaida/robot_mcp/branch/master/graph/badge.svg)](https://codecov.io/gh/dgaida/robot_mcp)
 [![Code Quality](https://github.com/dgaida/robot_mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/robot_mcp/actions/workflows/lint.yml)
 [![Tests](https://github.com/dgaida/robot_mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/robot_mcp/actions/workflows/tests.yml)
 [![CodeQL](https://github.com/dgaida/robot_mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/dgaida/robot_mcp/actions/workflows/codeql.yml)
