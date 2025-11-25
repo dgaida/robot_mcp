@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # TODO: macht eigentlich keinen Sinn speech2text in robot_environment zu haben, sollte besser in diesem package sein
 from redis_robot_comm import RedisImageStreamer
-from robot_environment.speech2text import Speech2Text
+from speech2text import Speech2Text
 
 from client.fastmcp_groq_client import RobotFastMCPClient
 
