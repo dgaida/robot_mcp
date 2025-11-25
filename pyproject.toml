@@ -33,7 +33,6 @@ dependencies = [
     "llm_client @ git+https://github.com/dgaida/llm_client.git",
     "python-dotenv>=1.0.0",
     "robot-environment @ git+https://github.com/dgaida/robot_environment.git",
-    "text2speech @ git+https://github.com/dgaida/text2speech.git",
     "speech2text @ git+https://github.com/dgaida/speech2text.git",
 ]
 
