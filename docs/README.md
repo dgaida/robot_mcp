@@ -44,6 +44,19 @@ This document provides in-depth information about the Robot MCP system architect
 └─────────────────────────────────────────────────────┘
 ```
 
+### Repositories Architecture
+
+![Repositories Architecture](robot_repos_architecture.png)
+
+**References**
+
+- [robot_environment](https://github.com/dgaida/robot_environment)
+- [robot_workspace](https://github.com/dgaida/robot_workspace)
+- [redis_robot_comm](https://github.com/dgaida/redis_robot_comm)
+- [vision_detect_segment](https://github.com/dgaida/vision_detect_segment)
+- [speech2text](https://github.com/dgaida/speech2text)
+- [text2speech](https://github.com/dgaida/text2speech)
+
 ### Why FastMCP?
 
 FastMCP offers several advantages over the original MCP protocol:
