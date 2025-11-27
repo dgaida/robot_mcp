@@ -357,7 +357,7 @@ def clear_collision_detected() -> None:
     Returns:
         None
     """
-    robot.robot().robot_ctrl().clear_collison_detected()
+    robot.robot().robot_ctrl().clear_collision_detected()
 
 
 # ============================================================================
