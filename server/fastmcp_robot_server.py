@@ -394,7 +394,7 @@ def get_detected_objects(
     env.robot_move2home_observation_pose()
 
     # wait for robot to reach observation pose
-    time.wait(1)
+    time.sleep(1)
 
     detected_objects = env.get_detected_objects()
     objects = detected_objects.get_detected_objects_serializable(location, coordinate, label)
