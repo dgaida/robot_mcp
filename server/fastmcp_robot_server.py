@@ -3,6 +3,7 @@ import argparse
 import functools
 import logging
 import os
+import time
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
@@ -390,6 +391,11 @@ def get_detected_objects(
     Returns:
         Optional[List[Dict]]: list of objects detected by the camera in the workspace.
     """
+    env.robot_move2home_observation_pose()
+
+    # wait for robot to reach observation pose
+    time.wait(1)
+
     detected_objects = env.get_detected_objects()
     objects = detected_objects.get_detected_objects_serializable(location, coordinate, label)
     return objects
@@ -414,6 +420,8 @@ def get_detected_object(coordinate: List[float], label: Optional[str] = None) ->
         Optional[Dict]: The first object detected near the given coordinate (and matching the label, if provided).
         Returns `None` if no such object is found.
     """
+    env.robot_move2home_observation_pose()
+
     detected_objects = env.get_detected_objects()
     return detected_objects.get_detected_object(coordinate, label, True)
 
@@ -429,6 +437,8 @@ def get_largest_detected_object() -> tuple[List[Dict], float]:
             - largest_object (List[Dict]): The largest detected object.
             - largest_size_m2 (float): The size of the largest object in square meters.
     """
+    env.robot_move2home_observation_pose()
+
     detected_objects = env.get_detected_objects()
     return detected_objects.get_largest_detected_object(True)
 
@@ -444,6 +454,8 @@ def get_smallest_detected_object() -> tuple[List[Dict], float]:
             - smallest_object (List[Dict]): The smallest detected object.
             - smallest_size_m2 (float): The size of the smallest object in square meters.
     """
+    env.robot_move2home_observation_pose()
+
     detected_objects = env.get_detected_objects()
     return detected_objects.get_smallest_detected_object(True)
 
@@ -461,6 +473,8 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
     Returns:
         List[Dict]: The list of detected objects sorted by size.
     """
+    env.robot_move2home_observation_pose()
+
     detected_objects = env.get_detected_objects()
     return detected_objects.get_detected_objects_sorted(ascending, True)
 
