@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/INSTALLATION/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/api/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/examples/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/mcp_api_reference/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/mcp_setup_guide/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+    <url>
+         <loc>https://dgaida.github.io/robot_mcp/troubleshooting/</loc>
+         <lastmod>2025-11-29</lastmod>
+    </url>
+</urlset>
