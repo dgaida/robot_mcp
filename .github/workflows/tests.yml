@@ -32,7 +32,7 @@ jobs:
       run: |
         if [ "$RUNNER_OS" == "Linux" ]; then
           sudo apt-get update
-          sudo apt-get install -y portaudio19-dev
+          sudo apt-get install -y portaudio19-dev xvfb
         elif [ "$RUNNER_OS" == "macOS" ]; then
           brew install portaudio
         fi
@@ -46,8 +46,17 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        pytest -v --cov=robot_mcp --cov-report=xml --cov-report=term
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          # Use Xvfb (virtual framebuffer) for GUI tests on Linux
+          xvfb-run -a pytest -v --cov=robot_mcp --cov-report=xml --cov-report=term
+        else
+          # macOS and Windows don't need Xvfb
+          pytest -v --cov=robot_mcp --cov-report=xml --cov-report=term
+        fi
       continue-on-error: false
+      env:
+        DISPLAY: ':99'
+      shell: bash
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'

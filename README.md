@@ -358,6 +358,17 @@ python client/fastmcp_universal_client.py --api gemini
 pytest tests/
 ```
 
+**Note for Linux servers/CI without display:**
+```bash
+# Install Xvfb (virtual framebuffer)
+sudo apt-get install xvfb
+
+# Run tests with virtual display
+xvfb-run -a pytest tests/
+```
+
+GitHub Actions automatically uses Xvfb on Linux runners.
+
 ### Code Quality
 
 ```bash

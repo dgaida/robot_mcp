@@ -254,6 +254,13 @@ def pick_place_object(
     Returns:
         bool: Always returns `True` after the pick-and-place operation.
     """
+    # TODO: check whether parameters are valid. E.g. location is sometimes set to "'close to'" which is not valid, if
+    #  not valid then return False (actually close to is a valid Loation, only for this method it is not valid or at
+    #  least not valid yet (does not make sense to place close to a place coordinate or maybe it does, but then i have
+    #  to look for the biggest free space around the place coordinate)). together with a message what went wrong. so
+    #  that the tool can be called again.
+    #  should be done for all tools. I can change the return value to a string. if succeeded then return a sentence
+    #  that object xy was picked from and placed at.
     return robot.pick_place_object(
         object_name=object_name,
         pick_coordinate=pick_coordinate,
@@ -361,6 +368,18 @@ def clear_collision_detected() -> None:
     robot.robot().robot_ctrl().clear_collision_detected()
 
 
+@mcp.tool
+@log_tool_call
+def calibrate(self) -> bool:
+    """
+    Calibrates the Robot.
+
+    Returns:
+        True, if calibration was successful, else False
+    """
+    return robot.calibrate()
+
+
 # ============================================================================
 # OBJECT DETECTION TOOLS
 # ============================================================================
@@ -422,22 +441,28 @@ def get_detected_object(coordinate: List[float], label: Optional[str] = None) ->
     """
     env.robot_move2home_observation_pose()
 
+    # wait for robot to reach observation pose
+    time.sleep(1)
+
     detected_objects = env.get_detected_objects()
     return detected_objects.get_detected_object(coordinate, label, True)
 
 
 @mcp.tool
 @log_tool_call
-def get_largest_detected_object() -> tuple[List[Dict], float]:
+def get_largest_detected_object() -> tuple[Dict, float]:
     """
     Returns the largest detected object based on its size in square meters.
 
     Returns:
         tuple: (largest_object, largest_size_m2) where:
-            - largest_object (List[Dict]): The largest detected object.
+            - largest_object (Dict): The largest detected object.
             - largest_size_m2 (float): The size of the largest object in square meters.
     """
     env.robot_move2home_observation_pose()
+
+    # wait for robot to reach observation pose
+    time.sleep(1)
 
     detected_objects = env.get_detected_objects()
     return detected_objects.get_largest_detected_object(True)
@@ -445,16 +470,19 @@ def get_largest_detected_object() -> tuple[List[Dict], float]:
 
 @mcp.tool
 @log_tool_call
-def get_smallest_detected_object() -> tuple[List[Dict], float]:
+def get_smallest_detected_object() -> tuple[Dict, float]:
     """
     Returns the smallest detected object based on its size in square meters.
 
     Returns:
         tuple: (smallest_object, smallest_size_m2) where:
-            - smallest_object (List[Dict]): The smallest detected object.
+            - smallest_object (Dict): The smallest detected object.
             - smallest_size_m2 (float): The size of the smallest object in square meters.
     """
     env.robot_move2home_observation_pose()
+
+    # wait for robot to reach observation pose
+    time.sleep(1)
 
     detected_objects = env.get_detected_objects()
     return detected_objects.get_smallest_detected_object(True)
@@ -474,6 +502,9 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
         List[Dict]: The list of detected objects sorted by size.
     """
     env.robot_move2home_observation_pose()
+
+    # wait for robot to reach observation pose
+    time.sleep(1)
 
     detected_objects = env.get_detected_objects()
     return detected_objects.get_detected_objects_sorted(ascending, True)
