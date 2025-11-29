@@ -39,24 +39,27 @@ class TestRobotFastMCPClient:
         """Create a RobotFastMCPClient instance with mocked dependencies."""
         with patch("client.fastmcp_groq_client.Groq", return_value=mock_groq_client):
             with patch("client.fastmcp_groq_client.Client") as mock_client_class:
-                mock_client = AsyncMock()
-                mock_client_class.return_value = mock_client
+                with patch("client.fastmcp_groq_client.SSETransport"):
+                    mock_client = AsyncMock()
+                    mock_client_class.return_value = mock_client
 
-                client = RobotFastMCPClient(groq_api_key="test_key", model="test-model")
-                client.client = mock_client
-                return client
+                    client = RobotFastMCPClient(groq_api_key="test_key", model="test-model")
+                    client.client = mock_client
+                    return client
 
     @pytest.mark.asyncio
     async def test_initialization(self):
         """Test client initialization."""
         with patch("client.fastmcp_groq_client.Groq"):
             with patch("client.fastmcp_groq_client.Client"):
-                client = RobotFastMCPClient(groq_api_key="test_key", model="test-model")
+                with patch("client.fastmcp_groq_client.SSETransport"):
+                    client = RobotFastMCPClient(groq_api_key="test_key", model="test-model")
 
-                assert client.groq_api_key == "test_key"
-                assert client.model == "test-model"
-                assert client.available_tools == []
-                assert client.conversation_history == []
+                    assert client.groq_api_key == "test_key"
+                    assert client.model == "test-model"
+                    assert client.available_tools == []
+                    assert client.conversation_history == []
+                    assert client.system_prompt is not None
 
     @pytest.mark.asyncio
     async def test_connect(self, client):
@@ -211,72 +214,75 @@ class TestIntegrationScenarios:
         """Test complete pick-and-place workflow."""
         with patch("client.fastmcp_groq_client.Groq") as mock_groq:
             with patch("client.fastmcp_groq_client.Client") as mock_client_class:
-                # Setup mocks
-                mock_client = AsyncMock()
-                mock_client_class.return_value = mock_client
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock()
+                with patch("client.fastmcp_groq_client.SSETransport"):
+                    # Setup mocks
+                    mock_client = AsyncMock()
+                    mock_client_class.return_value = mock_client
+                    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+                    mock_client.__aexit__ = AsyncMock()
 
-                # Mock tools
-                mock_tools = [
-                    MagicMock(name="get_detected_objects", description="Get objects", inputSchema={}),
-                    MagicMock(name="pick_place_object", description="Pick and place", inputSchema={}),
-                ]
-                mock_client.list_tools = AsyncMock(return_value=mock_tools)
-
-                # Mock Groq responses
-                mock_groq_instance = mock_groq.return_value
-
-                # First call: get objects
-                tool_call1 = MagicMock()
-                tool_call1.id = "call_1"
-                tool_call1.function.name = "get_detected_objects"
-                tool_call1.function.arguments = "{}"
-
-                response1 = MagicMock()
-                response1.choices = [MagicMock(message=MagicMock(content="", tool_calls=[tool_call1]))]
-
-                # Second call: pick and place
-                tool_call2 = MagicMock()
-                tool_call2.id = "call_2"
-                tool_call2.function.name = "pick_place_object"
-                tool_call2.function.arguments = json.dumps(
-                    {
-                        "object_name": "pencil",
-                        "pick_coordinate": [0.15, -0.05],
-                        "place_coordinate": [0.20, 0.10],
-                        "location": "right next to",
-                    }
-                )
-
-                response2 = MagicMock()
-                response2.choices = [MagicMock(message=MagicMock(content="", tool_calls=[tool_call2]))]
-
-                # Final response
-                response3 = MagicMock()
-                response3.choices = [
-                    MagicMock(message=MagicMock(content="I've placed the pencil to the right of the cube.", tool_calls=None))
-                ]
-
-                mock_groq_instance.chat.completions.create.side_effect = [response1, response2, response3]
-
-                # Mock tool results
-                mock_client.call_tool = AsyncMock(
-                    side_effect=[
-                        MagicMock(content=[MagicMock(text='[{"label": "pencil", "x": 0.15, "y": -0.05}]')]),
-                        MagicMock(content=[MagicMock(text="Success")]),
+                    # Mock tools
+                    mock_tools = [
+                        MagicMock(name="get_detected_objects", description="Get objects", inputSchema={}),
+                        MagicMock(name="pick_place_object", description="Pick and place", inputSchema={}),
                     ]
-                )
+                    mock_client.list_tools = AsyncMock(return_value=mock_tools)
 
-                # Execute
-                client = RobotFastMCPClient("test_key")
-                client.client = mock_client
-                await client.connect()
+                    # Mock Groq responses
+                    mock_groq_instance = mock_groq.return_value
 
-                response = await client.chat("Pick up the pencil and place it next to the cube")
+                    # First call: get objects
+                    tool_call1 = MagicMock()
+                    tool_call1.id = "call_1"
+                    tool_call1.function.name = "get_detected_objects"
+                    tool_call1.function.arguments = "{}"
 
-                assert "pencil" in response.lower()
-                assert mock_client.call_tool.call_count == 2
+                    response1 = MagicMock()
+                    response1.choices = [MagicMock(message=MagicMock(content="", tool_calls=[tool_call1]))]
+
+                    # Second call: pick and place
+                    tool_call2 = MagicMock()
+                    tool_call2.id = "call_2"
+                    tool_call2.function.name = "pick_place_object"
+                    tool_call2.function.arguments = json.dumps(
+                        {
+                            "object_name": "pencil",
+                            "pick_coordinate": [0.15, -0.05],
+                            "place_coordinate": [0.20, 0.10],
+                            "location": "right next to",
+                        }
+                    )
+
+                    response2 = MagicMock()
+                    response2.choices = [MagicMock(message=MagicMock(content="", tool_calls=[tool_call2]))]
+
+                    # Final response
+                    response3 = MagicMock()
+                    response3.choices = [
+                        MagicMock(
+                            message=MagicMock(content="I've placed the pencil to the right of the cube.", tool_calls=None)
+                        )
+                    ]
+
+                    mock_groq_instance.chat.completions.create.side_effect = [response1, response2, response3]
+
+                    # Mock tool results
+                    mock_client.call_tool = AsyncMock(
+                        side_effect=[
+                            MagicMock(content=[MagicMock(text='[{"label": "pencil", "x": 0.15, "y": -0.05}]')]),
+                            MagicMock(content=[MagicMock(text="Success")]),
+                        ]
+                    )
+
+                    # Execute
+                    client = RobotFastMCPClient("test_key")
+                    client.client = mock_client
+                    await client.connect()
+
+                    response = await client.chat("Pick up the pencil and place it next to the cube")
+
+                    assert "pencil" in response.lower()
+                    assert mock_client.call_tool.call_count == 2
 
 
 if __name__ == "__main__":
