@@ -5,11 +5,58 @@ import logging
 import os
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from fastmcp import FastMCP
+from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
+from schemas import (
+    GetDetectedObjectsInput,
+    PickObjectInput,
+    PickPlaceInput,
+    PlaceObjectInput,
+    PushObjectInput,
+    WorkspacePointInput,
+)
+
+# ============================================================================
+# VALIDATION DECORATOR
+# ============================================================================
+
+
+def validate_input(model_class):
+    """Decorator to validate tool inputs using Pydantic models."""
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                # Validate input using Pydantic model
+                validated_data = model_class(**kwargs)
+                # Call original function with validated data
+                result = func(*args, **validated_data.model_dump())
+                return result
+            except ValidationError as e:
+                # Format validation errors nicely
+                errors = []
+                for error in e.errors():
+                    field = ".".join(str(x) for x in error["loc"])
+                    msg = error["msg"]
+                    errors.append(f"{field}: {msg}")
+
+                error_msg = f"❌ Validation Error in {func.__name__}:\n" + "\n".join(f"  • {err}" for err in errors)
+                logger.error(error_msg)
+                return error_msg
+            except Exception as e:
+                error_msg = f"❌ Error in {func.__name__}: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                return error_msg
+
+        return wrapper
+
+    return decorator
+
 
 # ============================================================================
 # LOGGING SETUP - Configure BEFORE any imports that might use logging
@@ -46,17 +93,6 @@ LOG_FILE = log_filename
 logger.info("=" * 80)
 logger.info(f"FastMCP Robot Server starting - Log file: {log_filename}")
 logger.info("=" * 80)
-
-# ============================================================================
-# MCP SETUP
-# ============================================================================
-
-# Init MCP
-mcp = FastMCP("robot-environment")
-
-# Global environment - initialized later
-env = None
-robot = None
 
 
 def log_tool_call(func):
@@ -97,6 +133,15 @@ def log_tool_call(func):
     return wrapper
 
 
+# ============================================================================
+# MCP SETUP
+# ============================================================================
+
+mcp = FastMCP("robot-environment")
+env = None
+robot = None
+
+
 def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False):
     """Initialize the robot environment with given parameters."""
     global env, robot
@@ -129,7 +174,7 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 
 @mcp.tool
 @log_tool_call
-def get_largest_free_space_with_center() -> tuple[float, float, float]:
+def get_largest_free_space_with_center() -> str:
     """
     Determines the largest free space in the workspace in square metres and its center coordinate in metres.
     This method can be used to determine at which location an object can be placed safely.
@@ -147,17 +192,19 @@ def get_largest_free_space_with_center() -> tuple[float, float, float]:
     )
 
     Returns:
-        tuple: (largest_free_area_m2, center_x, center_y) where:
-            - largest_free_area_m2 (float): Largest free area in square meters.
-            - center_x (float): X-coordinate of the center of the largest free area in meters.
-            - center_y (float): Y-coordinate of the center of the largest free area in meters.
+        str: Description of the largest free space with area and center coordinates.
     """
-    return env.get_largest_free_space_with_center()
+    try:
+        area_m2, center_x, center_y = env.get_largest_free_space_with_center()
+        return f"✓ Largest free space: {area_m2:.4f} m² at center coordinates [{center_x:.3f}, {center_y:.3f}]"
+    except Exception as e:
+        return f"❌ Error getting largest free space: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> Optional[List[float]]:
+@validate_input(WorkspacePointInput)
+def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> str:
     """
     Get the world coordinate of a special point of the given workspace.
 
@@ -171,9 +218,16 @@ def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> Option
         - 'center point': Returns the world coordinate of the center of the workspace.
 
     Returns:
-        List[float]: (x,y) world coordinate of the point on the workspace that was specified by the argument point.
+        str: (x,y) world coordinate of the point on the workspace that was specified by the argument point.
     """
-    return env.get_workspace_coordinate_from_point(workspace_id, point)
+    try:
+        coord = env.get_workspace_coordinate_from_point(workspace_id, point)
+        if coord:
+            return f"✓ Coordinate of '{point}' in workspace '{workspace_id}': [{coord[0]:.3f}, {coord[1]:.3f}]"
+        else:
+            return f"❌ Could not get coordinate for '{point}' in workspace '{workspace_id}'"
+    except Exception as e:
+        return f"❌ Error getting workspace coordinate: {str(e)}"
 
 
 @mcp.tool
@@ -184,9 +238,13 @@ def get_object_labels_as_string() -> str:
     Call this method if the user wants to know which objects the robot can pick or is able to detect.
 
     Returns:
-        str: "chocolate bar, blue box, cigarette, ..."
+        str: Comma-separated list of detectable objects. "chocolate bar, blue box, cigarette, ..."
     """
-    return env.get_object_labels_as_string()
+    try:
+        labels = env.get_object_labels_as_string()
+        return f"✓ Detectable objects: {labels}"
+    except Exception as e:
+        return f"❌ Error getting object labels: {str(e)}"
 
 
 @mcp.tool
@@ -202,7 +260,14 @@ def add_object_name2object_labels(object_name: str) -> str:
     Returns:
         str: Message saying that the given object_name was added to the list of recognizable objects.
     """
-    return env.add_object_name2object_labels(object_name)
+    try:
+        if not object_name or not isinstance(object_name, str):
+            return "❌ Validation Error: object_name must be a non-empty string"
+
+        result = env.add_object_name2object_labels(object_name)
+        return f"✓ {result}"
+    except Exception as e:
+        return f"❌ Error adding object name: {str(e)}"
 
 
 # ============================================================================
@@ -212,12 +277,13 @@ def add_object_name2object_labels(object_name: str) -> str:
 
 @mcp.tool
 @log_tool_call
+@validate_input(PickPlaceInput)
 def pick_place_object(
     object_name: str,
-    pick_coordinate: list[float],
-    place_coordinate: list[float],
+    pick_coordinate: List[float],
+    place_coordinate: List[float],
     location: Union[Location, str, None] = None,
-) -> bool:
+) -> str:
     """
     Command the pick-and-place robot arm to pick a specific object and place it using its gripper.
     The gripper will move to the specified 'pick_coordinate' and pick the named object. Then it will move to the
@@ -241,8 +307,8 @@ def pick_place_object(
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
         coordinates to identify the object's exact position.
         place_coordinate (List): The world coordinates [x, y] where the object should be placed at.
-        location (Location): Specifies the relative placement position of the picked object in relation to an object
-        being at the 'place_coordinate'. Possible values are defined in the `Location` Enum:
+        location (Location or str): Specifies the relative placement position of the picked object in relation to an
+        object being at the 'place_coordinate'. Possible values are defined in the `Location` Enum:
             - `Location.LEFT_NEXT_TO`: Left of the reference object.
             - `Location.RIGHT_NEXT_TO`: Right of the reference object.
             - `Location.ABOVE`: Above the reference object.
@@ -250,28 +316,39 @@ def pick_place_object(
             - `Location.ON_TOP_OF`: On top of the reference object.
             - `Location.INSIDE`: Inside the reference object.
             - `Location.NONE`: No specific location relative to another object.
+        or 'left next to', 'right next to', 'above', 'below', 'on top of', 'inside'
 
     Returns:
-        bool: Always returns `True` after the pick-and-place operation.
+        str: Success message or error description
     """
     # TODO: check whether parameters are valid. E.g. location is sometimes set to "'close to'" which is not valid, if
     #  not valid then return False (actually close to is a valid Loation, only for this method it is not valid or at
     #  least not valid yet (does not make sense to place close to a place coordinate or maybe it does, but then i have
-    #  to look for the biggest free space around the place coordinate)). together with a message what went wrong. so
-    #  that the tool can be called again.
-    #  should be done for all tools. I can change the return value to a string. if succeeded then return a sentence
-    #  that object xy was picked from and placed at.
-    return robot.pick_place_object(
-        object_name=object_name,
-        pick_coordinate=pick_coordinate,
-        place_coordinate=place_coordinate,
-        location=location,
-    )
+    #  to look for the biggest free space around the place coordinate)).
+    try:
+        success = robot.pick_place_object(
+            object_name=object_name,
+            pick_coordinate=pick_coordinate,
+            place_coordinate=place_coordinate,
+            location=location,
+        )
+
+        if success:
+            location_str = f" {location} coordinate" if location else " at"
+            return (
+                f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}] "
+                f"and placed it{location_str} [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
+            )
+        else:
+            return f"❌ Failed to pick and place '{object_name}'"
+    except Exception as e:
+        return f"❌ Error during pick_place_object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def pick_object(object_name: str, pick_coordinate: List) -> bool:
+@validate_input(PickObjectInput)
+def pick_object(object_name: str, pick_coordinate: List[float]) -> str:
     """
     Command the pick-and-place robot arm to pick up a specific object using its gripper. The gripper will move to
     the specified 'pick_coordinate' and pick the named object.
@@ -287,14 +364,24 @@ def pick_object(object_name: str, pick_coordinate: List) -> bool:
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
         coordinates to identify the object's exact position.
     Returns:
-        bool: True on success
+        str: Success message or error description
     """
-    return robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate)
+    try:
+        success = robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate)
+
+        if success:
+            return f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]"
+        else:
+            return f"❌ Failed to pick '{object_name}'"
+    except Exception as e:
+        return f"❌ Error during pick_object: {str(e)}"
 
 
+# TODO: Location not documented as Location
 @mcp.tool
 @log_tool_call
-def place_object(place_coordinate: List, location: Union[Location, str, None] = None) -> bool:
+@validate_input(PlaceObjectInput)
+def place_object(place_coordinate: List[float], location: Union[Location, str, None] = None) -> str:
     """
     Instruct the pick-and-place robot arm to place a picked object at the specified 'place_coordinate'. The
     function moves the gripper to the specified 'place_coordinate' and calculates the exact placement position from
@@ -311,14 +398,24 @@ def place_object(place_coordinate: List, location: Union[Location, str, None] = 
         being at the 'place_coordinate'. Possible positions: 'left next to', 'right next to', 'above', 'below',
         'on top of', 'inside', or None. Set to None, if there is no location given in the task.
     Returns:
-        bool: True on success
+        str: Success message or error description
     """
-    return robot.place_object(place_coordinate=place_coordinate, location=location)
+    try:
+        success = robot.place_object(place_coordinate=place_coordinate, location=location)
+
+        if success:
+            location_str = f" {location} coordinate" if location else " at"
+            return f"✓ Successfully placed object{location_str} [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
+        else:
+            return "❌ Failed to place object"
+    except Exception as e:
+        return f"❌ Error during place_object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def push_object(object_name: str, push_coordinate: List, direction: str, distance: float):
+@validate_input(PushObjectInput)
+def push_object(object_name: str, push_coordinate: List[float], direction: str, distance: float) -> str:
     """
     Direct the pick-and-place robot arm to push a specific object to a new position.
     This function should only be called if it is not possible to pick the object.
@@ -334,14 +431,25 @@ def push_object(object_name: str, push_coordinate: List, direction: str, distanc
         distance: The distance (in millimeters) to push the object in the specified direction.
         Ensure the value is within the robot's operational range.
     Returns:
-        bool: True on success
+        str: Success message or error description
     """
-    return robot.push_object(object_name, push_coordinate, direction, distance)
+    try:
+        success = robot.push_object(object_name, push_coordinate, direction, distance)
+
+        if success:
+            return (
+                f"✓ Successfully pushed '{object_name}' from [{push_coordinate[0]:.3f}, {push_coordinate[1]:.3f}] "
+                f"{direction} by {distance:.1f}mm"
+            )
+        else:
+            return f"❌ Failed to push '{object_name}'"
+    except Exception as e:
+        return f"❌ Error during push_object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def move2observation_pose(workspace_id: str) -> None:
+def move2observation_pose(workspace_id: str) -> str:
     """
     The robot will move to a pose where it can observe (the gripper hovers over) the workspace given by workspace_id.
     Before a robot can pick up or place an object in a workspace, it must first move to this observation pose of the corresponding workspace.
@@ -350,34 +458,53 @@ def move2observation_pose(workspace_id: str) -> None:
         workspace_id: ID of the workspace
 
     Returns:
-        None
+        str: Success message or error description
     """
-    return robot.move2observation_pose(workspace_id)
+    try:
+        if not workspace_id or not isinstance(workspace_id, str):
+            return "❌ Validation Error: workspace_id must be a non-empty string"
+
+        robot.move2observation_pose(workspace_id)
+        return f"✓ Moved to observation pose for workspace '{workspace_id}'"
+    except Exception as e:
+        return f"❌ Error moving to observation pose: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def clear_collision_detected() -> None:
+def clear_collision_detected() -> str:
     """
     Reset the internal flag "collision_detected" of the Niryo robot. You need to call this after a
     collision of the robot.
 
     Returns:
-        None
+        str: Success message
     """
-    robot.robot().robot_ctrl().clear_collision_detected()
+    try:
+        robot.robot().robot_ctrl().clear_collision_detected()
+        return "✓ Collision detection flag cleared"
+    except Exception as e:
+        return f"❌ Error clearing collision flag: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def calibrate(self) -> bool:
+def calibrate() -> str:
     """
-    Calibrates the Robot.
+    Calibrate the robot.
 
     Returns:
-        True, if calibration was successful, else False
+        str: Success message or error description
     """
-    return robot.calibrate()
+    try:
+        success = robot.calibrate()
+
+        if success:
+            return "✓ Robot calibration completed successfully"
+        else:
+            return "❌ Robot calibration failed"
+    except Exception as e:
+        return f"❌ Error during calibration: {str(e)}"
 
 
 # ============================================================================
@@ -387,11 +514,12 @@ def calibrate(self) -> bool:
 
 @mcp.tool
 @log_tool_call
+@validate_input(GetDetectedObjectsInput)
 def get_detected_objects(
     location: Union[Location, str] = Location.NONE,
-    coordinate: List[float] = None,
+    coordinate: Optional[List[float]] = None,
     label: Optional[str] = None,
-) -> Optional[List[Dict]]:
+) -> str:
     """
     Get list of objects detected by the camera in the workspace.
 
@@ -408,21 +536,29 @@ def get_detected_objects(
         label (str, optional): Only objects with the given label are returned.
 
     Returns:
-        Optional[List[Dict]]: list of objects detected by the camera in the workspace.
+        str: JSON string of detected objects or error message
     """
-    env.robot_move2home_observation_pose()
+    try:
+        env.robot_move2home_observation_pose()
+        # wait for robot to reach observation pose
+        time.sleep(1)
 
-    # wait for robot to reach observation pose
-    time.sleep(1)
+        detected_objects = env.get_detected_objects()
+        objects = detected_objects.get_detected_objects_serializable(location, coordinate, label)
 
-    detected_objects = env.get_detected_objects()
-    objects = detected_objects.get_detected_objects_serializable(location, coordinate, label)
-    return objects
+        if objects:
+            import json
+
+            return f"✓ Found {len(objects)} object(s):\n{json.dumps(objects, indent=2)}"
+        else:
+            return "✓ No objects detected matching the criteria"
+    except Exception as e:
+        return f"❌ Error getting detected objects: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def get_detected_object(coordinate: List[float], label: Optional[str] = None) -> Optional[Dict]:
+def get_detected_object(coordinate: List[float], label: Optional[str] = None) -> str:
     """
     Retrieves a detected object at or near a specified world coordinate, optionally filtering by label.
 
@@ -436,78 +572,116 @@ def get_detected_object(coordinate: List[float], label: Optional[str] = None) ->
             with the matching label is returned.
 
     Returns:
-        Optional[Dict]: The first object detected near the given coordinate (and matching the label, if provided).
-        Returns `None` if no such object is found.
+        str: The first object detected near the given coordinate (and matching the label, if provided). or error message
     """
-    env.robot_move2home_observation_pose()
+    try:
+        if not isinstance(coordinate, list) or len(coordinate) != 2:
+            return "❌ Validation Error: coordinate must be a list of 2 numeric values [x, y]"
 
-    # wait for robot to reach observation pose
-    time.sleep(1)
+        if not all(isinstance(x, (int, float)) for x in coordinate):
+            return "❌ Validation Error: coordinate values must be numeric"
 
-    detected_objects = env.get_detected_objects()
-    return detected_objects.get_detected_object(coordinate, label, True)
+        env.robot_move2home_observation_pose()
+        # wait for robot to reach observation pose
+        time.sleep(1)
+
+        detected_objects = env.get_detected_objects()
+        obj = detected_objects.get_detected_object(coordinate, label, True)
+
+        if obj:
+            import json
+
+            return f"✓ Found object near [{coordinate[0]:.3f}, {coordinate[1]:.3f}]:\n{json.dumps(obj, indent=2)}"
+        else:
+            return f"✓ No object found near [{coordinate[0]:.3f}, {coordinate[1]:.3f}]"
+    except Exception as e:
+        return f"❌ Error getting detected object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def get_largest_detected_object() -> tuple[Dict, float]:
+def get_largest_detected_object() -> str:
     """
     Returns the largest detected object based on its size in square meters.
 
     Returns:
-        tuple: (largest_object, largest_size_m2) where:
-            - largest_object (Dict): The largest detected object.
-            - largest_size_m2 (float): The size of the largest object in square meters.
+        str: Largest object information or error message
     """
-    env.robot_move2home_observation_pose()
+    try:
+        env.robot_move2home_observation_pose()
+        # wait for robot to reach observation pose
+        time.sleep(1)
 
-    # wait for robot to reach observation pose
-    time.sleep(1)
+        detected_objects = env.get_detected_objects()
+        obj, size = detected_objects.get_largest_detected_object(True)
 
-    detected_objects = env.get_detected_objects()
-    return detected_objects.get_largest_detected_object(True)
+        if obj:
+            import json
+
+            return f"✓ Largest object ({size:.6f} m²):\n{json.dumps(obj, indent=2)}"
+        else:
+            return "✓ No objects detected"
+    except Exception as e:
+        return f"❌ Error getting largest object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def get_smallest_detected_object() -> tuple[Dict, float]:
+def get_smallest_detected_object() -> str:
     """
     Returns the smallest detected object based on its size in square meters.
 
     Returns:
-        tuple: (smallest_object, smallest_size_m2) where:
-            - smallest_object (Dict): The smallest detected object.
-            - smallest_size_m2 (float): The size of the smallest object in square meters.
+        str: Smallest object information or error message
     """
-    env.robot_move2home_observation_pose()
+    try:
+        env.robot_move2home_observation_pose()
+        time.sleep(1)
 
-    # wait for robot to reach observation pose
-    time.sleep(1)
+        detected_objects = env.get_detected_objects()
+        obj, size = detected_objects.get_smallest_detected_object(True)
 
-    detected_objects = env.get_detected_objects()
-    return detected_objects.get_smallest_detected_object(True)
+        if obj:
+            import json
+
+            return f"✓ Smallest object ({size:.6f} m²):\n{json.dumps(obj, indent=2)}"
+        else:
+            return "✓ No objects detected"
+    except Exception as e:
+        return f"❌ Error getting smallest object: {str(e)}"
 
 
 @mcp.tool
 @log_tool_call
-def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
+def get_detected_objects_sorted(ascending: bool = True) -> str:
     """
-    Returns the detected objects sorted by size in square meters.
+    Get detected objects sorted by size.
 
     Args:
-        ascending (bool): If True, sorts the objects in ascending order.
-                          If False, sorts in descending order.
+        ascending: If True, sort smallest to largest; if False, largest to smallest
 
     Returns:
-        List[Dict]: The list of detected objects sorted by size.
+        str: Sorted list of objects or error message
     """
-    env.robot_move2home_observation_pose()
+    try:
+        if not isinstance(ascending, bool):
+            return "❌ Validation Error: ascending must be a boolean (true/false)"
 
-    # wait for robot to reach observation pose
-    time.sleep(1)
+        env.robot_move2home_observation_pose()
+        time.sleep(1)
 
-    detected_objects = env.get_detected_objects()
-    return detected_objects.get_detected_objects_sorted(ascending, True)
+        detected_objects = env.get_detected_objects()
+        objects = detected_objects.get_detected_objects_sorted(ascending, True)
+
+        if objects:
+            import json
+
+            order = "smallest to largest" if ascending else "largest to smallest"
+            return f"✓ Found {len(objects)} object(s) sorted {order}:\n{json.dumps(objects, indent=2)}"
+        else:
+            return "✓ No objects detected"
+    except Exception as e:
+        return f"❌ Error getting sorted objects: {str(e)}"
 
 
 # OBJECT TOOLS
@@ -538,7 +712,7 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
 #     Returns:
 #         List[float]: x,y world coordinates of the object. At these coordinates you can pick the object.
 #     """
-#     return myobject.label()
+#     return myobject.coordinate()
 
 
 # ============================================================================
@@ -550,8 +724,14 @@ def get_detected_objects_sorted(ascending: bool = True) -> List[Dict]:
 @log_tool_call
 def speak(text: str) -> str:
     """Make the robot speak a message using text-to-speech."""
-    env.oralcom_call_text2speech_async(text)
-    return f"Speaking: {text}"
+    try:
+        if not text or not isinstance(text, str):
+            return "❌ Validation Error: text must be a non-empty string"
+
+        env.oralcom_call_text2speech_async(text)
+        return f"✓ Speaking: '{text}'"
+    except Exception as e:
+        return f"❌ Error during text-to-speech: {str(e)}"
 
 
 # ============================================================================
@@ -564,7 +744,7 @@ def speak(text: str) -> str:
 # python server/fastmcp_robot_server.py --no-simulation
 def main():
     """Main entry point when running as script."""
-    parser = argparse.ArgumentParser(description="FastMCP Robot Server")
+    parser = argparse.ArgumentParser(description="FastMCP Robot Server with Pydantic Validation")
     parser.add_argument("--robot", choices=["niryo", "widowx"], default="niryo")
     parser.add_argument("--no-simulation", action="store_false", dest="simulation")
     parser.add_argument("--host", default="127.0.0.1")
@@ -588,7 +768,7 @@ def main():
 
     # Print to console (since logging is file-only)
     print("=" * 60)
-    print("STARTING FASTMCP ROBOT SERVER")
+    print("STARTING FASTMCP ROBOT SERVER (with Pydantic Validation)")
     print("=" * 60)
     print(f"Robot:        {args.robot}")
     print(f"Simulation:   {args.simulation}")
@@ -600,6 +780,7 @@ def main():
     print(f"\nServer running at: http://{args.host}:{args.port}")
     print(f"SSE endpoint: http://{args.host}:{args.port}/sse")
     print(f"\nMonitor logs: tail -f {log_filename}")
+    print("\n✨ Pydantic validation enabled for all tool inputs")
     print("\nPress Ctrl+C to stop")
     print("=" * 60 + "\n")
 
@@ -612,7 +793,7 @@ def main():
         start_camera_thread=not args.no_camera,
     )
 
-    logger.info("Starting MCP server...")
+    logger.info("Starting MCP server with Pydantic validation...")
 
     # Run server
     try:
