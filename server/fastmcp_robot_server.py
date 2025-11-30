@@ -11,8 +11,7 @@ from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
-
-from .schemas import (
+from schemas import (
     GetDetectedObjectsInput,
     PickObjectInput,
     PickPlaceInput,
@@ -74,7 +73,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(log_filename),
+        logging.FileHandler(log_filename, encoding="utf-8"),
         # DO NOT add StreamHandler - interferes with MCP communication
     ],
     force=True,  # Override any existing configuration
