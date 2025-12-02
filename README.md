@@ -128,7 +128,15 @@ docker run -p 6379:6379 redis:alpine
 # Terminal 1: Start FastMCP Server
 python server/fastmcp_robot_server.py --robot niryo --no-simulation
 
-# Terminal 2: Run universal client (auto-detects available API)
+# Terminal 2: start object detection and segmentation
+# cd .. vision_detect_segment
+python scripts/detect_objects_publish_annotated_frames.py
+
+# Terminal 3: visualize augmented frames (optional but highly recommended)
+# cd .. redis_robot_comm
+python scripts/visualize_annotated_frames.py
+
+# Terminal 4: Run universal client (auto-detects available API)
 python client/fastmcp_universal_client.py
 ```
 
