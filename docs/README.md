@@ -48,6 +48,10 @@ This document provides in-depth information about the Robot MCP system architect
 
 ![Repositories Architecture](robot_repos_architecture.png)
 
+### Data Flow via Redis Streams
+
+![Data Flow via Redis Streams](redis_applications_architecture_diagram.png)
+
 **References**
 
 - [robot_environment](https://github.com/dgaida/robot_environment)
