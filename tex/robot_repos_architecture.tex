@@ -1,0 +1,137 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,shadows,fit}
+
+\begin{document}
+
+\tikzset{
+	repository/.style={
+		rectangle,
+		draw,
+		fill=blue!20,
+		text width=3.5cm,
+		text centered,
+		minimum height=1.8cm,
+		rounded corners,
+		drop shadow,
+		font=\bfseries
+	},
+	interface/.style={
+		rectangle,
+		draw,
+		fill=green!20,
+		text width=3cm,
+		text centered,
+		minimum height=1.5cm,
+		rounded corners,
+		drop shadow
+	},
+	infrastructure/.style={
+		rectangle,
+		draw,
+		fill=orange!20,
+		text width=3.2cm,
+		text centered,
+		minimum height=1.2cm,
+		rounded corners,
+		drop shadow
+	},
+	llm/.style={
+		rectangle,
+		draw,
+		fill=purple!20,
+		text width=3cm,
+		text centered,
+		minimum height=1.5cm,
+		rounded corners,
+		drop shadow
+	},
+	arrow/.style={
+		->,
+		>=stealth,
+		thick
+	},
+	bidirectional/.style={
+		<->,
+		>=stealth,
+		thick
+	},
+	label/.style={
+		font=\small,
+		text width=3.5cm,
+		text centered
+	}
+}
+
+\begin{tikzpicture}[node distance=2.5cm and 3.5cm]
+
+  % Top Layer - User Interface and LLM
+  \node[interface] (gui) {Robot GUI\\(Gradio)};
+  \node[llm, right=of gui] (llm) {LLM Client\\(OpenAI/Groq/\\Gemini/Ollama)};
+  \node[repository, left=of gui] (speech2text) {speech2text\\(Whisper)};
+
+  % Middle Layer - Control and Communication
+  \node[repository, below=2cm of gui] (mcp) {robot\_mcp\\(FastMCP Server)};
+  \node[infrastructure, right=3.25cm of mcp] (redis) {Redis Server\\(Streams \&\\Messages)};
+
+  % Lower-Middle Layer - Core Components
+  \node[repository, below left=2.5cm and 2.0cm of mcp] (environment) {robot\_environment};
+  \node[repository, below right=2cm and 1cm of redis] (vision) {vision\_detect\_segment\\(OwlV2/YOLO)};
+
+  % Bottom Layer - Support Modules
+  \node[repository, below left=2.0cm of environment] (workspace) {robot\_workspace};
+  \node[repository, below right=2.0cm of environment] (text2speech) {text2speech\\(Kokoro)};
+
+  % Infrastructure at bottom
+  \node[infrastructure, left=3.0cm of vision] (redis_comm) {redis\_robot\_comm};
+
+  % Arrows - User Interface Layer
+  \draw[arrow] (gui) -- node[above, label] {Chat Interface\\User Commands} (llm);
+  \draw[arrow] (speech2text) -- node[above, label] {Voice Input} (gui);
+  %\draw[arrow] (gui) -- node[left, label] {User Commands} (mcp);
+  \draw[bidirectional] (llm) -- node[right, label] {Tool Calls\\(MCP Protocol)} (mcp);
+
+  % Arrows - MCP to Environment
+  \draw[bidirectional] (mcp) -- node[below right=-0.7cm and 0.2cm, label] {Manipulation\\Commands \&\\Detection Queries} (environment);
+  \draw[arrow] (mcp) -- node[above, label] {Detection\\Requests} (redis);
+
+  % Arrows - Environment Connections
+  \draw[bidirectional] (environment) -- node[left=1cm, above, label] {Workspace\\Transforms} (workspace);
+  \draw[arrow] (environment) -- node[right, label] {Audio Feedback} (text2speech);
+
+  % Arrows - Redis Communication
+  \draw[bidirectional] (environment) -- node[below=0.1cm, label] {Image Streaming\\Object Data} (redis_comm);
+  \draw[bidirectional] (vision) -- node[right, below, label] {Image Retrieval\\Detection Results} (redis_comm);
+  \draw[bidirectional] (redis_comm) -- node[right=-0.6cm, label] {Pub/Sub\\Streams} (redis);
+
+  % Arrows - Vision Pipeline
+  \draw[arrow] (redis) -- node[above, right, label] {Image Stream} (vision);
+
+  % Group boxes
+  %\node[draw, dashed, thick, fit=(workspace) (text2speech),
+  %inner sep=0.4cm] (support) {};
+  %\node[below=0.1cm of support] {\textbf{Support Modules}};
+
+  \node[draw, dashed, thick, fit=(environment) (workspace) (text2speech),
+  inner sep=0.4cm] (core) {};
+  \node[above=0.1cm of core] {\textbf{Core Robot System}};
+
+  \node[draw, dashed, thick, fit=(speech2text) (gui) (llm),
+  inner sep=0.4cm] (ui) {};
+  \node[above=0.1cm of ui] {\textbf{User Interface Layer}};
+
+  % Legend
+  \node[above left=0.5cm and 5cm of speech2text] (legend_title) {\textbf{Legend:}};
+
+  \node[repository, below=0.3cm of legend_title, minimum height=0.8cm, text width=2.5cm] (leg_repo)
+  {\small Repository};
+  \node[interface, below=0.2cm of leg_repo, minimum height=0.8cm, text width=2.5cm] (leg_interface)
+  {\small User Interface};
+  \node[llm, below=0.2cm of leg_interface, minimum height=0.8cm, text width=2.5cm] (leg_llm)
+  {\small LLM Service};
+  \node[infrastructure, below=0.2cm of leg_llm, minimum height=0.8cm, text width=2.5cm] (leg_infra)
+  {\small Infrastructure};
+
+\end{tikzpicture}
+
+\end{document}
