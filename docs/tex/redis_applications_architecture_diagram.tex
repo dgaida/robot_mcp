@@ -90,7 +90,8 @@
   \node[repository, above right=4.5cm and 2cm of redis_layer.north] (mcp_server) {robot\_mcp\\MCP Server};
 
   \node[repository, below=0.5cm of mcp_server] (robot_env) {robot\_environment};
-  \node[repository, right=0.9cm of robot_env] (robot_ws) {robot\_workspace};
+  \node[repository, right=0.9cm of robot_env, text width=3.5cm] (robot_ws) {robot\_workspace};
+  \node[repository, right=0.9cm of robot_ws, text width=3.5cm] (text2speech) {text2speech};
 
   % Robot pictogram (simplified)
   \node[above right=-1.8cm and 2.5cm of mcp_server] (robot_pic) {
@@ -134,6 +135,7 @@
   \draw[arrow] (robot_env.south) -- node[right, label] {Publish\\Raw Frames} (redis_images.north);
   \draw[arrow] (robot_env.east) -- (robot_ws.west);
   \draw[bidirectional] (robot_env.west) -- node[above left=0.0cm and 0.0cm, label] {Receive/Update\\Detectable Objects} (redis_labels.north east);
+  \draw[arrow] (robot_env.south east) to[bend right=20] node[below, label] {Command} (text2speech.south west);
 
   % MCP Server <- Redis (object data)
   \draw[arrow] (redis_objects.north east) -- node[above right=1.0cm and 0.2cm, label] {Receive\\Detections} (robot_env.south west);
@@ -153,7 +155,7 @@
   % Group Boxes
   % ============================================================
 
-  \node[draw, dashed, thick, fit=(mcp_server) (robot_env) (robot_ws) (robot_pic),
+  \node[draw, dashed, thick, fit=(mcp_server) (robot_env) (robot_ws) (robot_pic) (text2speech),
   inner sep=0.5cm] (server_group) {};
   \node[above=0.1cm of server_group] {\textbf{Robot Control}};
 
@@ -161,7 +163,7 @@
   % Legend
   % ============================================================
 
-  \node[above right=0.3cm and 1.5cm of redis_layer.east] (legend_title) {\textbf{Legend:}};
+  \node[above right=0.3cm and 2.0cm of redis_layer.east] (legend_title) {\textbf{Legend:}};
 
   \node[repository, right=0.5cm of legend_title, minimum height=0.8cm, text width=2.2cm] (leg_repo) {\small Package/ Script};
   \node[component, right=0.3cm of leg_repo, minimum height=0.8cm, text width=2.0cm] (leg_comp) {\small Component};
