@@ -30,6 +30,7 @@ class PickPlaceInput(BaseModel):
     pick_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     place_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     location: Optional[Union[Location, str]] = Field(None, description="Relative placement location")
+    z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Height offset in meters (0.0-0.1)")
 
     class Config:
         arbitrary_types_allowed = True  # Allow enum types
@@ -47,15 +48,23 @@ class PickPlaceInput(BaseModel):
         if v is None:
             return v
 
-        # If already a Location enum, validate and return
+        # If already a Location enum, validate and return (but check for CLOSE_TO)
         if isinstance(v, Location):
+            if v == Location.CLOSE_TO:
+                raise ValueError(
+                    "Location 'close to' is not valid for pick_place_object. Use specific locations like 'left next to', 'right next to', 'above', 'below', 'on top of', or 'inside'."
+                )
             return v
 
-        # If string, validate against Location enum values
+        # If string, validate against Location enum values (excluding 'close to')
         if isinstance(v, str):
-            valid_locations = [loc.value for loc in Location if loc.value is not None]
+            # Get all valid locations except CLOSE_TO and NONE
+            valid_locations = [loc.value for loc in Location if loc.value is not None and loc != Location.CLOSE_TO]
+
             if v.lower() not in [loc.lower() for loc in valid_locations]:
-                raise ValueError(f"Invalid location '{v}'. Must be one of: {', '.join(valid_locations)}")
+                raise ValueError(
+                    f"Invalid location '{v}'. Must be one of: {', '.join(valid_locations)}. Note: 'close to' is not allowed for pick_place_object."
+                )
             return v
 
         raise ValueError(f"Location must be a string or Location enum, got {type(v)}")
@@ -66,6 +75,7 @@ class PickObjectInput(BaseModel):
 
     object_name: str = Field(..., min_length=1)
     pick_coordinate: List[float] = Field(..., min_length=2, max_length=2)
+    z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Height offset in meters (0.0-0.1)")
 
     @field_validator("pick_coordinate")
     @classmethod

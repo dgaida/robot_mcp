@@ -15,7 +15,11 @@ Natural language robot control using **FastMCP** and **Multi-LLM Support** (Open
 
 Control robotic arms (Niryo Ned2, WidowX) through natural language using the Model Context Protocol (MCP) and **multiple LLM providers**. Simply tell the robot what to do: *"Pick up the pencil and place it next to the red cube"*.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/G69l3VyHL-0?si=JhubMV5wWhLz0QxJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+### Video about the repository
+
+Click the image below to watch a YouTube video about the repository created with NotebookLM:
+
+[![Robot Demo](https://img.youtube.com/vi/G69l3VyHL-0?si=JhubMV5wWhLz0QxJ/maxresdefault.jpg)](https://www.youtube.com/watch?v=G69l3VyHL-0?si=JhubMV5wWhLz0QxJ)
 
 ### 🆕 Multi-LLM Support
 

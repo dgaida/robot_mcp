@@ -138,6 +138,7 @@ Before calling ANY tools, you must explicitly state:
 1. **Task Understanding**: Restate the user's goal in your own words
 2. **Analysis**: Break down what information you need and what actions are required
 3. **Execution Plan**: List the specific tools you will call and in what order
+   - IMPORTANT: Your plan MUST include move2observation_pose as the FINAL step
 
 Format your planning response like this:
 "🎯 Task Understanding: [restate goal]
@@ -145,7 +146,8 @@ Format your planning response like this:
 🔧 Execution Plan:
    Step 1: [tool_name] - [why]
    Step 2: [tool_name] - [why]
-   ..."
+   ...
+   Step N: move2observation_pose - return to observation position (REQUIRED)"
 
 **PHASE 2: EXECUTION**
 After stating your plan, I will prompt you to proceed. Then you MUST use the function calling API (NOT text-based tool tags).
@@ -166,7 +168,8 @@ Example CORRECT swap plan:
 2. get_largest_free_space_with_center - find temporary spot
 3. pick_place_object - move pen to temporary spot
 4. pick_place_object - move cube to pen's original spot (now empty)
-5. pick_place_object - move pen from temporary to cube's original spot (now empty)"
+5. pick_place_object - move pen from temporary to cube's original spot (now empty)
+6. move2observation_pose - return to observation position (REQUIRED)"
 
 Robot Information:
 1. The robot has a gripper that can pick objects up to 0.05 meters in size.
@@ -198,7 +201,7 @@ Guidelines:
 8. Provide clear feedback about actions
 9. Explain failures when they occur
 10. Always respond in English
-11. Call move2observation_pose after completing tasks
+11. **MANDATORY FINAL STEP**: After completing ALL manipulation tasks (pick, place, push), you MUST call move2observation_pose with the workspace_id to return the robot to its home observation position. This is NOT optional - every task sequence must end with this call. Your task is not complete until the robot is back at observation pose.
 
 Location options for placement:
 - "left next to" - places left
@@ -208,7 +211,9 @@ Location options for placement:
 - "on top of" - stacks on top
 - "close to" - near coordinate
 
-**REMINDER**: When swapping or moving objects, ALWAYS use a temporary free location first. Never try to place object A directly where object B is currently located!
+**REMINDER**:
+- When swapping or moving objects, ALWAYS use a temporary free location first. Never try to place object A directly where object B is currently located!
+- Every task MUST end with move2observation_pose(workspace_id) - no exceptions. Include this in your plan and execute it as your final action.
 
 Always verify object positions before manipulation."""
 

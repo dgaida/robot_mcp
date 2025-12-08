@@ -283,6 +283,7 @@ def pick_place_object(
     pick_coordinate: List[float],
     place_coordinate: List[float],
     location: Union[Location, str, None] = None,
+    z_offset: float = 0.001,
 ) -> str:
     """
     Command the pick-and-place robot arm to pick a specific object and place it using its gripper.
@@ -301,6 +302,15 @@ def pick_place_object(
     --> Picks the chocolate bar that is located at world coordinates [-0.1, 0.01] and places it right next to an
     object that exists at world coordinate [0.1, 0.11].
 
+    robot.pick_place_object(
+        object_name='cube',
+        pick_coordinate=[0.2, 0.05],
+        place_coordinate=[0.3, 0.1],
+        location=Location.ON_TOP_OF,
+        z_offset=0.02
+    )
+    --> Picks the cube with a 2cm z-offset (useful if it's on top of another object).
+
     Args:
         object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
         the robot's workspace.
@@ -317,26 +327,26 @@ def pick_place_object(
             - `Location.INSIDE`: Inside the reference object.
             - `Location.NONE`: No specific location relative to another object.
         or 'left next to', 'right next to', 'above', 'below', 'on top of', 'inside'
+        z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
+        Useful for picking objects that are stacked on top of other objects.
 
     Returns:
         str: Success message or error description
     """
-    # TODO: check whether parameters are valid. E.g. location is sometimes set to "'close to'" which is not valid, if
-    #  not valid then return False (actually close to is a valid Loation, only for this method it is not valid or at
-    #  least not valid yet (does not make sense to place close to a place coordinate or maybe it does, but then i have
-    #  to look for the biggest free space around the place coordinate)).
     try:
         success = robot.pick_place_object(
             object_name=object_name,
             pick_coordinate=pick_coordinate,
             place_coordinate=place_coordinate,
             location=location,
+            z_offset=z_offset,
         )
 
         if success:
             location_str = f" {location} coordinate" if location else " at"
+            z_offset_str = f" (z_offset: {z_offset:.3f}m)" if z_offset != 0.001 else ""
             return (
-                f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}] "
+                f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]{z_offset_str} "
                 f"and placed it{location_str} [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
             )
         else:
@@ -348,7 +358,7 @@ def pick_place_object(
 @mcp.tool
 @log_tool_call
 @validate_input(PickObjectInput)
-def pick_object(object_name: str, pick_coordinate: List[float]) -> str:
+def pick_object(object_name: str, pick_coordinate: List[float], z_offset: float = 0.001) -> str:
     """
     Command the pick-and-place robot arm to pick up a specific object using its gripper. The gripper will move to
     the specified 'pick_coordinate' and pick the named object.
@@ -358,19 +368,25 @@ def pick_object(object_name: str, pick_coordinate: List[float]) -> str:
     robot.pick_object("pen", [0.01, -0.15])
     --> Picks the pen that is located at world coordinates [0.01, -0.15].
 
+    robot.pick_object("pen", [0.01, -0.15], z_offset=0.02)
+    --> Picks the pen with a 2cm offset above its detected position (useful for stacked objects).
+
     Args:
         object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
         the robot's workspace.
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
         coordinates to identify the object's exact position.
+        z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
+        Useful for picking objects that are stacked on top of other objects.
     Returns:
         str: Success message or error description
     """
     try:
-        success = robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate)
+        success = robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate, z_offset=z_offset)
 
         if success:
-            return f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]"
+            z_offset_str = f" with z_offset {z_offset:.3f}m" if z_offset != 0.001 else ""
+            return f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]{z_offset_str}"
         else:
             return f"❌ Failed to pick '{object_name}'"
     except Exception as e:
