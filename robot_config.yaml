@@ -1,0 +1,212 @@
+# Robot MCP Configuration
+# This file centralizes all configuration for server, client, robot, and LLM settings
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  max_workers: 4
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_dir: "log"
+
+robot:
+  type: "niryo"  # niryo, widowx
+  simulation: true
+  verbose: false
+  enable_camera: true
+  camera_update_rate_hz: 2
+
+  # Robot workspace boundaries (in meters, world coordinates)
+  workspace:
+    niryo:
+      id: "niryo_ws"
+      bounds:
+        x_min: 0.163  # Closer to robot
+        x_max: 0.337  # Farther from robot
+        y_min: -0.087  # Right side
+        y_max: 0.087   # Left side
+      center: [0.25, 0.0]
+
+    widowx:
+      id: "widowx_ws"
+      bounds:
+        x_min: 0.15
+        x_max: 0.35
+        y_min: -0.10
+        y_max: 0.10
+      center: [0.25, 0.0]
+
+  # Motion parameters
+  motion:
+    pick_z_offset: 0.001  # Default z-offset for picking (meters)
+    place_z_offset: 0.001  # Default z-offset for placing (meters)
+    safe_height: 0.15     # Safe height above workspace (meters)
+    approach_speed: 50    # Speed percentage for approach
+    retract_speed: 50     # Speed percentage for retract
+    gripper_close_delay: 0.5  # Seconds to wait after closing gripper
+    gripper_open_delay: 0.3   # Seconds to wait after opening gripper
+
+detection:
+  # Object detection model
+  model: "owlv2"  # owlv2, yoloworld
+  device: "cuda"  # cuda, cpu
+  confidence_threshold: 0.15
+  iou_threshold: 0.5
+  max_detections: 100
+
+  # Default detectable objects
+  default_labels:
+    - "pencil"
+    - "pen"
+    - "cube"
+    - "cylinder"
+    - "square"
+    - "chocolate bar"
+    - "cigarette"
+    - "blue box"
+    - "red box"
+
+  # Spatial query thresholds
+  spatial:
+    close_to_radius_m: 0.02  # 2cm radius for "close to" queries
+    left_right_threshold_m: 0.01  # Minimum y-distance for left/right
+    above_below_threshold_m: 0.01  # Minimum x-distance for above/below
+
+llm:
+  # Default provider (auto, openai, groq, gemini, ollama)
+  default_provider: "auto"  # auto = use first available
+
+  # Generation parameters
+  temperature: 0.7
+  max_tokens: 4096
+
+  # Chain-of-thought settings
+  enable_cot: true  # Enable chain-of-thought prompting
+  require_planning: true  # Force planning phase before execution
+  max_iterations: 15  # Maximum tool-calling iterations
+
+  # Provider-specific settings
+  providers:
+    openai:
+      enabled: true
+      default_model: "gpt-4o-mini"
+      models:
+        - "gpt-4o"
+        - "gpt-4o-mini"
+        - "gpt-3.5-turbo"
+      rate_limit_rpm: 500  # Requests per minute
+
+    groq:
+      enabled: true
+      default_model: "llama-3.3-70b-versatile"
+      models:
+        - "moonshotai/kimi-k2-instruct-0905"
+        - "llama-3.3-70b-versatile"
+        - "llama-3.1-8b-instant"
+        - "mixtral-8x7b-32768"
+        - "gemma2-9b-it"
+      rate_limit_rpm: 30  # Free tier limit
+
+    gemini:
+      enabled: true
+      default_model: "gemini-2.0-flash-exp"
+      models:
+        - "gemini-2.0-flash-exp"
+        - "gemini-2.5-pro"
+        - "gemini-1.5-flash"
+        - "gemini-1.5-pro"
+      rate_limit_rpm: 60
+
+    ollama:
+      enabled: true
+      default_model: "llama3.2:1b"
+      models:
+        - "llama3.2:1b"
+        - "llama3.2:3b"
+        - "mistral:7b"
+        - "codellama:7b"
+      base_url: "http://localhost:11434"
+
+tts:
+  # Text-to-speech settings
+  enabled: true
+  provider: "elevenlabs"  # elevenlabs, kokoro, none
+
+  elevenlabs:
+    voice_id: "default"
+    stability: 0.5
+    similarity_boost: 0.75
+
+  kokoro:
+    voice: "default"
+    speed: 1.0
+
+redis:
+  # Redis connection settings
+  host: "localhost"
+  port: 6379
+  db: 0
+  decode_responses: true
+
+  # Stream names
+  streams:
+    camera: "robot_camera"
+    detected_objects: "detected_objects"
+    annotated_frames: "annotated_frames"
+
+gui:
+  # Gradio web interface settings
+  host: "127.0.0.1"
+  port: 7860
+  share: false  # Create public link
+  enable_voice_input: true
+  enable_camera_feed: true
+  theme: "default"  # default, soft, glass
+
+logging:
+  # Logging configuration
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # Log levels by module
+  levels:
+    root: "INFO"
+    FastMCPRobotServer: "INFO"
+    RobotUniversalMCPClient: "INFO"
+    robot_environment: "INFO"
+    visual_detect_segment: "INFO"
+
+  # File rotation
+  rotation:
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+
+# Environment-specific overrides
+# These can be set via environment variables: ROBOT_ENV=production
+environments:
+  development:
+    server:
+      log_level: "DEBUG"
+    robot:
+      simulation: true
+      verbose: true
+    llm:
+      temperature: 0.8
+
+  production:
+    server:
+      log_level: "WARNING"
+      host: "0.0.0.0"  # Allow external connections
+    robot:
+      simulation: false
+      verbose: false
+    llm:
+      temperature: 0.5  # More deterministic
+
+  testing:
+    server:
+      log_level: "DEBUG"
+    robot:
+      simulation: true
+      enable_camera: false
+    llm:
+      max_iterations: 5  # Faster tests
