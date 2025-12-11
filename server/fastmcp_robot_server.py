@@ -357,6 +357,90 @@ def pick_place_object(
 
 @mcp.tool
 @log_tool_call
+def move2by(
+    object_name: str,
+    pick_coordinate: List[float],
+    direction: str,
+    distance: float,
+    z_offset: float = 0.001,
+) -> str:
+    """
+    Command the pick-and-place robot arm to pick a specific object and move it a given distance left/right/up/down
+    its original position using its gripper.
+    The gripper will move to the specified 'pick_coordinate' and pick the named object.
+    Then it will move the given distance in the direction specified by 'direction' and place the object there.
+
+    Example call:
+
+    robot.move2by(
+        object_name='pencil',
+        pick_coordinate=[-0.11, 0.21],
+        direction='left',
+        distance=0.02
+    )
+    --> Picks the pencil that is located at world coordinates [-0.11, 0.21] and places it 2 cm to the left
+    at world coordinate [-0.11, 0.23].
+
+    robot.move2by(
+        object_name='cube',
+        pick_coordinate=[-0.11, 0.21],
+        direction='up',
+        distance=0.03,
+        z_offset=0.02
+    )
+    --> Picks the cube with a 2cm z-offset and places it 3cm upwards. The argument z_offset is useful if the cube is
+    on top of, or blocking, another object. This is because the gripper then hovers 2cm above the workspace and does
+    not touch the object beneath the cube. This assumes that the height of the object beneath does not exceed 2cm.
+    Otherwise, select a larger z-offset.
+
+    Args:
+        object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
+        the robot's workspace.
+        pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
+        coordinates to identify the object's exact position.
+        direction (str): Direction to which object is moved. Possible values are: 'left', 'right', 'up', 'down'.
+        distance (float): Specifies the relative distance in meters to which the object should be moved.
+        z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
+        Useful for picking objects that are stacked on top of other objects or are blocking other objects.
+
+    Returns:
+        str: Success message or error description
+    """
+    try:
+        place_coordinate = pick_coordinate.copy()
+        if direction == 'left':
+            place_coordinate[1] += distance
+        elif direction == 'right':
+            place_coordinate[1] -= distance
+        elif direction == 'up':
+            place_coordinate[0] += distance
+        elif direction == 'down':
+            place_coordinate[0] -= distance
+        else:
+            raise ValueError(f"Invalid direction '{direction}'")
+
+        success = robot.pick_place_object(
+            object_name=object_name,
+            pick_coordinate=pick_coordinate,
+            place_coordinate=place_coordinate,
+            location=None,
+            z_offset=z_offset,
+        )
+
+        if success:
+            z_offset_str = f" (z_offset: {z_offset:.3f}m)" if z_offset != 0.001 else ""
+            return (
+                f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]{z_offset_str} "
+                f"and placed it {distance*100:.1f} centimeters {direction}wards at [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
+            )
+        else:
+            return f"❌ Failed to pick and move '{object_name}'"
+    except Exception as e:
+        return f"❌ Error during move2by: {str(e)}"
+
+
+@mcp.tool
+@log_tool_call
 @validate_input(PickObjectInput)
 def pick_object(object_name: str, pick_coordinate: List[float], z_offset: float = 0.001) -> str:
     """
