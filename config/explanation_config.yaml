@@ -1,0 +1,138 @@
+# config/explanation_config.yaml
+# Configuration for the robot's communication and explanation system
+
+# LLM settings for generating explanations
+llm:
+  provider: "groq"  # openai, groq, gemini, ollama
+  model: null  # null = use provider default
+  temperature: 0.7  # Higher = more creative explanations
+  max_tokens: 150  # Keep explanations concise
+
+# Voice output settings
+voice:
+  enabled: true
+
+  # Priority levels determine when to use voice
+  # high = always speak
+  # medium = speak 50% of the time
+  # low = speak 10% of the time
+  # never = never speak
+  priority:
+    # Critical operations
+    pick_place_object: high
+    pick_object: high
+    place_object: high
+    push_object: high
+    calibrate: high
+
+    # Important operations
+    move2observation_pose: medium
+    get_detected_objects: medium
+    get_largest_free_space_with_center: medium
+
+    # Low priority operations
+    get_detected_object: low
+    get_largest_detected_object: low
+    get_smallest_detected_object: low
+    get_detected_objects_sorted: low
+    get_workspace_coordinate_from_point: low
+    get_object_labels_as_string: low
+    add_object_name2object_labels: low
+    clear_collision_detected: low
+
+    # Never announce these
+    speak: never
+
+# Explanation templates for fallback (when LLM unavailable)
+fallback_templates:
+  pick_place_object: "Picking up {object_name} and placing it at the target location"
+  pick_object: "Picking up {object_name}"
+  place_object: "Placing the object I'm holding"
+  push_object: "Pushing {object_name} {direction}"
+  move2observation_pose: "Moving to observation position to see the workspace"
+  get_detected_objects: "Scanning the workspace for objects"
+  calibrate: "Calibrating my joints for accurate movement"
+  get_largest_free_space_with_center: "Looking for the largest empty space"
+
+# Personality settings
+personality:
+  use_emojis: true  # Add emojis to explanations
+  tone: "friendly"  # friendly, professional, playful
+  verbosity: "concise"  # concise (1-2 sentences), detailed (2-4 sentences)
+
+  # Emoji mappings
+  emojis:
+    manipulation: "🤖"
+    observation: "👁️"
+    detection: "🔍"
+    success: "✓"
+    error: "❌"
+    thinking: "💭"
+
+# Logging settings
+logging:
+  log_explanations: true
+  log_voice_output: true
+  explanation_log_level: "INFO"  # DEBUG, INFO, WARNING
+
+# Advanced settings
+advanced:
+  # Cache explanations for identical tool calls
+  enable_caching: false
+
+  # Maximum cache size
+  cache_size: 100
+
+  # Timeout for LLM requests (seconds)
+  llm_timeout: 5.0
+
+  # Retry logic
+  max_retries: 2
+  retry_delay: 1.0
+
+  # Context awareness
+  include_workspace_context: true
+  include_object_context: true
+  include_history_context: false  # Use previous actions as context
+
+  # Language support
+  language: "en"  # en, de, es, fr, etc.
+  multilingual_explanations: false
+
+# System prompts for different explanation types
+prompts:
+  system_base: |
+    You are a helpful robot assistant explaining your actions to users in a friendly way.
+    Keep explanations to 1-2 sentences unless asked for detail.
+    Be clear about what you're doing and why.
+
+  system_concise: |
+    You are a helpful robot assistant. Explain your actions in exactly 1 sentence.
+    Be clear and friendly.
+
+  system_detailed: |
+    You are a helpful robot assistant explaining your actions to users.
+    Provide 2-3 sentences explaining what you're doing, why, and what comes next.
+    Be friendly and educational.
+
+  system_playful: |
+    You are a cheerful robot assistant with personality!
+    Explain your actions enthusiastically in 1-2 sentences.
+    Use casual language and show excitement about helping.
+
+# Example explanations (for reference/testing)
+examples:
+  pick_place_object:
+    - "I'm moving to pick up the pencil and place it next to the red cube as you requested."
+    - "Let me grab that object and relocate it to your specified position."
+    - "I'll carefully pick up the item and set it down at the target location."
+
+  move2observation_pose:
+    - "Moving to my observation position so I can see all the objects clearly."
+    - "I need to position myself above the workspace for a better view."
+    - "Repositioning to get a complete view of the work area."
+
+  get_detected_objects:
+    - "Let me scan the workspace and identify all visible objects."
+    - "I'm checking what's currently in my work area."
+    - "Analyzing the workspace to detect and locate objects."
