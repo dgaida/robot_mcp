@@ -1,0 +1,165 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows.meta,positioning,shadows,fit,backgrounds}
+
+\begin{document}
+
+	\tikzset{
+		layer/.style={
+			rectangle,
+			draw=black,
+			very thick,
+			fill=blue!10,
+			text width=18cm,
+			minimum height=4cm,
+			rounded corners=5pt,
+			drop shadow
+		},
+		component/.style={
+			rectangle,
+			draw,
+			fill=green!20,
+			text width=3.2cm,
+			text centered,
+			minimum height=1cm,
+			rounded corners=3pt,
+			font=\small
+		},
+		external/.style={
+			rectangle,
+			draw,
+			fill=orange!20,
+			text width=3.2cm,
+			text centered,
+			minimum height=1cm,
+			rounded corners=3pt,
+			font=\small,
+			dashed
+		},
+		data/.style={
+			cylinder,
+			draw,
+			fill=red!20,
+			text width=2cm,
+			text centered,
+			minimum height=0.8cm,
+			shape border rotate=90,
+			aspect=0.25,
+			font=\small
+		},
+		arrow/.style={
+			->,
+			>=Stealth,
+			thick
+		},
+		dataarrow/.style={
+			->,
+			>=Stealth,
+			thick,
+			dashed,
+			color=blue
+		},
+		dataarrowtodo/.style={
+			->,
+			>=Stealth,
+			thick,
+			dashed,
+			color=red
+		}
+	}
+
+	\begin{tikzpicture}[node distance=1.5cm and 1.5cm]
+
+		% ============================================================
+		% CLIENT LAYER
+		% ============================================================
+
+		\node[layer] (client) at (0, 4) {};
+		\node[left=0.6cm of client.west, font=\Large\bfseries] {Client Layer};
+
+		\node[component] (llm) at (client.center) [xshift=-6cm] {Groq LLMs\\(Inference)};
+		\node[component] (fastmcp_client) at (client.center) {FastMCP Client\\(Tool Invocation)};
+		\node[external] (gradio) at (client.center) [xshift=6cm] {Gradio GUI\\(Optional)};
+
+		% ============================================================
+		% SERVER LAYER
+		% ============================================================
+
+		\node[layer, below=2cm of client] (server) {};
+		\node[left=0.6cm of server.west, font=\Large\bfseries] {Server Layer};
+
+		\node[component] (fastmcp_server) at (server.center) [xshift=-6cm] {FastMCP Server\\(Tool Registry)};
+		\node[component] (robot_tools) at (server.center) {Robot Tools\\(pick, place, move)};
+		\node[component] (vision_tools) at (server.center) [xshift=6cm] {Vision Tools\\(Detect, Segment)};
+
+		% ============================================================
+		% HARDWARE LAYER
+		% ============================================================
+
+		\node[layer, below=2cm of server] (hardware) {};
+		\node[left=0.6cm of hardware.west, font=\Large\bfseries] {Hardware Layer};
+
+		\node[component] (robot) at (hardware.center) [xshift=-6.5cm] {Robot Arm\\(Niryo / WidowX)};
+		\node[external] (camera) at (hardware.center) [xshift=-1.5cm] {Camera\\(RGB)};
+		\node[data] (redis) at (hardware.center) [xshift=2.5cm] {Redis\\Server};
+		\node[external] (workcell) at (hardware.center) [xshift=6.5cm] {Workspace\\Objects};
+
+		% ============================================================
+		% ARROWS: Client → Server
+		% ============================================================
+
+		\draw[arrow] (llm.south) -- ++(0,-0.6) -| (fastmcp_server.north);
+		\draw[arrow] (fastmcp_client.south) -- (robot_tools.north);
+		\draw[arrow] (gradio.south) -- ++(0,-0.6) -| (vision_tools.north);
+
+		% ============================================================
+		% ARROWS: Server → Hardware
+		% ============================================================
+
+		\draw[arrow] (robot_tools.south) -- ++(0,-0.6) -| (robot.north);
+		\draw[arrow] (vision_tools.south) -- ++(0,-1.0) -| (camera.north);
+
+		% Redis communication
+		\draw[dataarrow] (camera.south) -- ++(0,-1.0) -| (redis.south);
+		\draw[dataarrow] (redis.north) -- ++(0,1.5) |- (vision_tools.west);
+
+		% Object data to tools
+		\draw[dataarrow] (workcell.north) -- ++(0,2.5) -| ++(-4.4,0) |- (robot_tools.east);
+		\draw[dataarrow] (workcell.east) -- ++(0.5,0.0) |- (vision_tools.east);
+
+		% ============================================================
+		% Annotations
+		% ============================================================
+
+		\node[font=\tiny, text width=3cm, above=0.06cm of fastmcp_client] {
+			\textbf{Responsibilities:}\\
+			• Call server tools\\
+			• Provide parameters\\
+			• Stream results to UI
+		};
+
+		\node[font=\tiny, text width=2.5cm, above right=0.05cm of fastmcp_server] {
+			\textbf{Tools Exposed:}\\
+			• robot\_move()\\
+			• robot\_pick()\\
+			• detect\_objects()\\
+			• segment\_image()
+		};
+
+		\node[font=\tiny, text width=3cm, below right=0.05cm of redis] {
+			\textbf{Streams:}\\
+			• robot\_camera\\
+			• detected\_objects\\
+			• environment\_state
+		};
+
+		% Legend
+		\begin{scope}[shift={(-12.5,6.6)}]
+			\node[font=\small\bfseries] at (0,0.5) {Legend};
+			\draw[arrow] (0,0) -- (0.8,0) node[right, font=\tiny] {Usage};
+			\draw[dataarrow] (0,-0.4) -- (0.8,-0.4) node[right, font=\tiny] {Data};
+		\end{scope}
+
+	\end{tikzpicture}
+
+\end{document}
