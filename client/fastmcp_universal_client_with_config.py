@@ -720,7 +720,18 @@ Always verify object positions before manipulation."""
         print("🤖 ROBOT CONTROL ASSISTANT (Universal LLM + CoT + Config)")
         print("=" * 60)
         print(f"\nUsing: {self.llm_client.api_choice.upper()} - {self.llm_client.llm}")
-        print(f"Log file: {self.logger.handlers[0].baseFilename}")
+        log_file = "See log/ directory"
+        try:
+            # Search for FileHandler in root logger
+            for handler in logging.getLogger().handlers:
+                if isinstance(handler, logging.FileHandler):
+                    log_file = handler.baseFilename
+                    break
+        except Exception as e:
+            # If anything fails, just use default message
+            print(e)
+
+        print(f"Log file: {log_file}")
         print(f"Config: {self.config.robot.type} robot, simulation={self.config.robot.simulation}")
 
         if self.text_overlay_manager:
