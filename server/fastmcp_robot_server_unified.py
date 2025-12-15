@@ -93,24 +93,24 @@ class ExplanationGenerator:
     """Generates natural language explanations for tool calls."""
 
     VOICE_PRIORITY = {
-        "pick_place_object": "high",
-        "pick_object": "high",
-        "place_object": "high",
-        "push_object": "high",
-        "move2by": "high",
-        "calibrate": "high",
-        "move2observation_pose": "medium",
-        "get_detected_objects": "medium",
-        "get_largest_free_space_with_center": "medium",
-        "get_detected_object": "low",
-        "get_largest_detected_object": "low",
-        "get_smallest_detected_object": "low",
-        "get_detected_objects_sorted": "low",
-        "get_workspace_coordinate_from_point": "low",
-        "get_object_labels_as_string": "low",
-        "add_object_name2object_labels": "low",
-        "clear_collision_detected": "low",
-        "speak": "never",
+        "pick_place_object": 8,
+        "pick_object": 8,
+        "place_object": 8,
+        "push_object": 7,
+        "move2by": 7,
+        "calibrate": 7,
+        "move2observation_pose": 5,
+        "get_detected_objects": 5,
+        "get_largest_free_space_with_center": 5,
+        "get_detected_object": 2,
+        "get_largest_detected_object": 2,
+        "get_smallest_detected_object": 2,
+        "get_detected_objects_sorted": 2,
+        "get_workspace_coordinate_from_point": 2,
+        "get_object_labels_as_string": 2,
+        "add_object_name2object_labels": 2,
+        "clear_collision_detected": 1,
+        "speak": 0,  # Never announce
     }
 
     def __init__(self, api_choice: str = "groq", model: str = None, verbose: bool = False):
@@ -128,19 +128,14 @@ class ExplanationGenerator:
             logger.error(f"Failed to initialize LLM client: {e}")
             self.enabled = False
 
-    def should_speak(self, tool_name: str) -> bool:
-        """Determine if this tool call should generate speech."""
-        import random
+    def should_speak(self, tool_name: str) -> int:
+        """
+        ✅ MODIFIED: Return priority instead of boolean.
 
-        priority = self.VOICE_PRIORITY.get(tool_name, "low")
-
-        if priority == "high":
-            return True
-        elif priority == "medium":
-            return random.random() > 0.5
-        elif priority == "low":
-            return random.random() > 0.9
-        return False
+        Returns:
+            int: Priority value (0 = don't speak, 1-10 = speak with priority)
+        """
+        return self.VOICE_PRIORITY.get(tool_name, 0)
 
     def generate_explanation(self, tool_name: str, tool_description: str, arguments: dict) -> str:
         """Generate a natural language explanation for a tool call."""
@@ -335,11 +330,15 @@ def log_tool_call_with_explanation(func):
                     )
 
                 # Speak if priority is high enough
-                if explanation_generator.should_speak(tool_name) and env is not None:
+                priority = explanation_generator.should_speak(tool_name)
+                if priority > 0 and env is not None:
                     try:
-                        env.oralcom_call_text2speech_async(explanation)
+                        # Queue with priority (non-blocking)
+                        success = env.oralcom_call_text2speech_async(explanation, priority=priority)
+                        if not success:
+                            logger.warning("Failed to queue TTS message")
                     except Exception as e:
-                        logger.warning(f"TTS failed: {e}")
+                        logger.warning(f"TTS queueing failed: {e}")
 
             except Exception as e:
                 logger.error(f"Failed to generate explanation: {e}")
@@ -1230,6 +1229,9 @@ def main():
         logger.error(f"Server error: {e}", exc_info=True)
         raise
     finally:
+        if env is not None:
+            env.cleanup()
+
         logger.info("=" * 80)
         logger.info("SERVER STOPPED")
         logger.info("=" * 80)
