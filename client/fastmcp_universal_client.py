@@ -374,12 +374,14 @@ Always verify object positions before manipulation."""
         return has_planning, content
 
     async def chat(self, user_message: str) -> str:
-        """Process a user message and return assistant's response.
+        """
+        Process a user message and return assistant's response.
 
         This method handles the complete interaction loop with chain-of-thought:
-        1. ENFORCES planning phase: LLM must explain reasoning first
-        2. Then allows tool calls after planning is complete
-        3. Returns final response to user
+        1. Publishes user task to Redis for video overlay
+        2. ENFORCES planning phase: LLM must explain reasoning first
+        3. Then allows tool calls after planning is complete
+        4. Returns final response to user
 
         Args:
             user_message: User's input message
@@ -515,7 +517,7 @@ Always verify object positions before manipulation."""
 
                     # Check if model wants to call tools
                     if assistant_message.tool_calls:
-                        logger.info(f"LLM requested {len(assistant_message.tool_calls)} tool call(s)")
+                        logger.info(f"✓ LLM requested {len(assistant_message.tool_calls)} tool call(s)")
 
                         # Add assistant's tool call request to history
                         self.conversation_history.append(
@@ -546,8 +548,32 @@ Always verify object positions before manipulation."""
                         continue
 
                     else:
-                        # No more tool calls, return final response
+                        # No more tool calls, check for text-based tool output
                         final_response = assistant_message.content or "I completed the task."
+
+                        # 🔧 FIX: Detect if LLM is writing text tools instead of calling them
+                        text_tool_markers = ["<use_tool>", "</use_tool>", "<tool_name>", "```python", "get_detected_objects("]
+
+                        if any(marker in final_response for marker in text_tool_markers):
+                            logger.warning("⚠️ LLM outputting text-based tools instead of function calls")
+                            logger.warning(f"Response: {final_response[:200]}...")
+
+                            # Add correction and retry
+                            self.conversation_history.append({"role": "assistant", "content": final_response})
+
+                            self.conversation_history.append(
+                                {
+                                    "role": "user",
+                                    "content": (
+                                        "You wrote text describing tools instead of calling them. "
+                                        "Use the function calling API - I will see tool_calls in your response. "
+                                        "Do NOT write <use_tool> or Python code. Just call the functions."
+                                    ),
+                                }
+                            )
+
+                            # Retry
+                            continue
 
                         logger.info(f"Final assistant response: {final_response}")
                         logger.info("=" * 80)
