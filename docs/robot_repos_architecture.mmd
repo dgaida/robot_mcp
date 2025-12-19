@@ -1,0 +1,48 @@
+graph TB
+    subgraph User_Interface["<b>User Interface Layer</b>"]
+        speech2text["<b>speech2text</b><br/>(Whisper)"]
+        gui["Robot GUI<br/>(Gradio)"]
+        llm["LLM Client<br/>(OpenAI/Groq/<br/>Gemini/Ollama)"]
+    end
+
+    mcp["<b>robot_mcp</b><br/>(FastMCP Server)"]
+    redis["Redis Server<br/>(Streams &<br/>Messages)"]
+
+    subgraph Core_Robot["<b>Core Robot System</b>"]
+        environment["<b>robot_environment</b>"]
+        workspace["<b>robot_workspace</b>"]
+        text2speech["<b>text2speech</b><br/>(Kokoro)"]
+    end
+
+    redis_comm["<b>redis_robot_comm</b>"]
+    vision["<b>vision_detect_segment</b><br/>(OwlV2/YOLO)"]
+
+    %% User Interface connections
+    speech2text -->|Voice Input| gui
+    gui -->|Chat Interface<br/>User Commands| llm
+    llm <-->|Tool Calls<br/>(MCP Protocol)| mcp
+
+    %% MCP connections
+    mcp <-->|Manipulation<br/>Commands &<br/>Detection Queries| environment
+    mcp -->|Detection<br/>Requests| redis
+
+    %% Environment connections
+    environment <-->|Workspace<br/>Transforms| workspace
+    environment -->|Audio Feedback| text2speech
+    environment <-->|Image Streaming<br/>Object Data| redis_comm
+
+    %% Redis communication
+    redis_comm <-->|Pub/Sub<br/>Streams| redis
+    vision <-->|Image Retrieval<br/>Detection Results| redis_comm
+    redis -->|Image Stream| vision
+
+    %% Styling
+    classDef repository fill:#bbdefb,stroke:#1976d2,stroke-width:2px
+    classDef interface fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef llmStyle fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    classDef infrastructure fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+
+    class mcp,environment,workspace,text2speech,vision,speech2text repository
+    class gui interface
+    class llm llmStyle
+    class redis,redis_comm infrastructure
