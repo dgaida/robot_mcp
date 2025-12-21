@@ -19,7 +19,7 @@ graph TB
         text2speech["<b>Text2Speech</b><br/>(Kokoro)"]
     end
 
-    vision["<b>Object Detection, Tracking<br/>and Segmentation</b>"]
+    vision["<b>Object Detection,</br>Tracking<br/>and Segmentation</b>"]
 
     %% User Interface connections
     user -->|Chat Interface| gui
@@ -36,15 +36,15 @@ graph TB
 
     %% Environment connections
     environment -->|Objects in<br/>Image Plane &</br>Camera Pose| workspace
-    workspace -->|Objects in<br/>World Coordinates| environment
+    workspace -->|Objects in<br/>World</br>Coordinates| environment
     environment -->|User Feedback| text2speech
-    redis -->|Objects in<br/>Image Plane| environment
+    redis -->|Objects in<br/>Image Plane &</br>Camera Pose| environment
     camera -->|Frames &</br>Camera Pose| redis
     text2speech -->|Audio Feedback| user
     mcp -->|Audio Feedback</br>Text2Speech| user
 
     %% Redis communication
-    vision -->|Detection Results| redis
+    vision -->|Objects with</br>Bounding Boxes</br>and Masks| redis
     redis -->|Frames| vision
 
     %% Styling
