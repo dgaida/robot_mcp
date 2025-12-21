@@ -20,7 +20,7 @@ graph TB
     %% User Interface connections
     speech2text -->|Voice Input| gui
     gui -->|Chat Interface<br/>User Commands| llm
-    llm <-->|Tool Calls<br/>(MCP Protocol)| mcp
+    llm <-->|Tool Calls<br/>MCP Protocol| mcp
 
     %% MCP connections
     mcp <-->|Manipulation<br/>Commands &<br/>Detection Queries| environment
