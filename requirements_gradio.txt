@@ -1,0 +1,21 @@
+# Requirements for Robot MCP Control System
+
+# Core MCP dependencies
+fastmcp>=0.1.0
+
+# Multi-LLM support
+git+https://github.com/dgaida/llm_client.git
+
+# Speech recognition (from GitHub)
+git+https://github.com/dgaida/speech2text.git
+
+# Redis communication (from GitHub)
+git+https://github.com/dgaida/redis_robot_comm.git
+
+# GUI dependencies
+gradio>=4.0.0,<5.0.0
+
+# Utility packages
+python-dotenv>=1.0.0
+
+pydantic>=2.0.0

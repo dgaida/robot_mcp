@@ -1,0 +1,54 @@
+# environment.yml
+# Anaconda environment for Robot MCP Gradio GUI
+
+name: robot_mcp_gui
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python
+  - python=3.10
+
+  # Core dependencies
+  - pip
+  - numpy>=1.20.0
+  - opencv>=4.5.0
+
+  # PyTorch (CPU or GPU - adjust as needed)
+  - pytorch-cuda=11.8
+  - torchaudio>=2.0.0
+#  - cpuonly  # Remove this line if you have CUDA GPU
+
+  # Web framework
+  - gradio>=4.0.0
+
+  # Redis
+#  - redis-py>=4.0.0
+
+  # Audio
+#  - sounddevice>=0.4.0
+#  - scipy
+
+  # Pip dependencies (not available via conda)
+  - pip:
+      # FastMCP and robot packages (from GitHub)
+      - fastmcp>=0.1.0
+      - git+https://github.com/dgaida/llm_client.git
+#      - git+https://github.com/dgaida/robot_environment.git
+#      - git+https://github.com/dgaida/text2speech.git
+      - git+https://github.com/dgaida/speech2text.git
+      - git+https://github.com/dgaida/redis_robot_comm.git
+
+      # Utilities
+      - python-dotenv>=1.0.0
+      - pydantic>=2.0.0
+
+      # Whisper dependencies
+#      - transformers
+#      - whisper-mic
+
+      # Image processing (if not covered by opencv)
+#      - pillow>=9.0.0

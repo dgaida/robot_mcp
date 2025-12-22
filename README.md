@@ -23,7 +23,7 @@ Click the image below to watch a YouTube video about the repository created with
 
 ### 🆕 Multi-LLM Support
 
-Now supports **4 LLM providers** with automatic API detection:
+Now supports **4 LLM providers** with automatic API detection (see [LLMClient](https://github.com/dgaida/llm_client)):
 
 | Provider | Models | Best For | Speed |
 |----------|--------|----------|-------|
@@ -408,7 +408,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Function Calling Support**: OpenAI, Groq, and Gemini all support function calling natively. Ollama has limited support and falls back to text-based instruction following.
 
-**Dependencies**: [Robot Environment](https://github.com/dgaida/robot_environment) and [Text2Speech](https://github.com/dgaida/text2speech) are automatically installed from GitHub.
+**Dependencies**: [Robot Environment](https://github.com/dgaida/robot_environment), [Redis Robot Comm](https://github.com/dgaida/redis_robot_comm), [Text2Speech](https://github.com/dgaida/text2speech) and [Speech2Text](https://github.com/dgaida/speech2text) are automatically installed from GitHub.
 
 ## 📄 License
 
