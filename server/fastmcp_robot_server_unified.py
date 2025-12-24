@@ -411,23 +411,27 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 @log_tool_call_with_explanation
 def get_largest_free_space_with_center() -> str:
     """
-    Determines the largest free space in the workspace in square metres and its center coordinate in metres.
-    This method can be used to determine at which location an object can be placed safely.
+    Determine the largest free space in the workspace and its center coordinate.
 
-    Example call:
-    To pick a 'chocolate bar' and place it at the center of the largest free space of the workspace, call:
+    This method analyzes the workspace to find the largest contiguous empty area,
+    which is useful for safely placing objects without collisions.
 
-    largest_free_area_m2, center_x, center_y = agent.get_largest_free_space_with_center()
+    Examples:
+        get_largest_free_space_with_center()
+        # Returns: "0.0045 m² at center [0.240, -0.030]"
 
-    robot.pick_place_object(
-        object_name='chocolate bar',
-        pick_coordinate=[-0.1, 0.01],
-        place_coordinate=[center_x, center_y],
-        location=Location.RIGHT_NEXT_TO
-    )
+        # Use for safe placement:
+        # 1. result = get_largest_free_space_with_center()
+        # 2. Parse to get center coordinates
+        # 3. place_object(center_coords, None)
+
+        # Example workflow:
+        # area, x, y = parse_result()
+        # pick_place_object("cube", [0.2, 0.1], [x, y], None)
 
     Returns:
-        str: Description of the largest free space with area and center coordinates.
+        str: Description of the largest free space with area in square meters
+            and center coordinates in meters [x, y].
     """
     try:
         area_m2, center_x, center_y = env.get_largest_free_space_with_center()
@@ -441,19 +445,47 @@ def get_largest_free_space_with_center() -> str:
 @validate_input(WorkspacePointInput)
 def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> str:
     """
-    Get the world coordinate of a special point of the given workspace.
+    Get the world coordinate of a special point in the workspace.
+
+    Returns coordinates for workspace corners and center point, useful for
+    boundary-aware placement and workspace organization.
+
+    Examples:
+        get_workspace_coordinate_from_point("niryo_ws", "upper left corner")
+        # Returns: "✓ Coordinate of 'upper left corner': [0.337, 0.087]"
+
+        get_workspace_coordinate_from_point("niryo_ws", "center point")
+        # Returns: "✓ Coordinate of 'center point': [0.250, 0.000]"
+
+        get_workspace_coordinate_from_point("niryo_ws", "lower right corner")
+        # Returns: "✓ Coordinate of 'lower right corner': [0.163, -0.087]"
+
+        # Use for boundary placement:
+        # upper_left = get_workspace_coordinate_from_point("niryo_ws", "upper left corner")
+        # pick_place_object("cube", [0.2, 0.1], upper_left, None)
+
+        # Organize in corners:
+        # place_object(get_workspace_coordinate_from_point("niryo_ws", "upper right corner"))
 
     Args:
-        workspace_id (str): ID of workspace.
-        point (str): description of point. Possible values are:
-        - 'upper left corner': Returns the world coordinate of the upper left corner of the workspace.
-        - 'upper right corner': Returns the world coordinate of the upper right corner of the workspace.
-        - 'lower left corner': Returns the world coordinate of the lower left corner of the workspace.
-        - 'lower right corner': Returns the world coordinate of the lower right corner of the workspace.
-        - 'center point': Returns the world coordinate of the center of the workspace.
+        workspace_id (str): ID of the workspace (e.g., "niryo_ws", "gazebo_1").
+            Must match a configured workspace in the system.
+        point (str): Description of the point to query. Valid options:
+            - "upper left corner": Farthest and leftmost point
+            - "upper right corner": Farthest and rightmost point
+            - "lower left corner": Closest and leftmost point
+            - "lower right corner": Closest and rightmost point
+            - "center point": Center of the workspace
 
     Returns:
-        str: (x,y) world coordinate of the point on the workspace that was specified by the argument point.
+        str: World coordinates [x, y] in meters of the specified point,
+            or error message if workspace_id or point is invalid.
+
+    Note:
+        For Niryo workspace:
+        - Upper left: [0.337, 0.087] (far and left)
+        - Lower right: [0.163, -0.087] (close and right)
+        - Center: ~[0.250, 0.000]
     """
     try:
         coord = env.get_workspace_coordinate_from_point(workspace_id, point)
@@ -469,11 +501,27 @@ def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> str:
 @log_tool_call_with_explanation
 def get_object_labels_as_string() -> str:
     """
-    Returns all object labels that the object detection model is able to detect as a comma separated string.
-    Call this method if the user wants to know which objects the robot can pick or is able to detect.
+    Return all object labels that the detection model can recognize.
+
+    This function returns a comma-separated string of all object types that the
+    vision system is configured to detect. Use this to verify which objects the
+    robot can identify in general.
+
+    Examples:
+        get_object_labels_as_string()
+        # Returns: "pencil, pen, cube, cylinder, chocolate bar, cigarette, ..."
+
+        # List available objects to user:
+        # labels = get_object_labels_as_string()
+        # print(f"I can detect: {labels}")
 
     Returns:
-        str: Comma-separated list of detectable objects. "chocolate bar, blue box, cigarette, ..."
+        str: Comma-separated list of detectable object labels,
+            e.g., "chocolate bar, blue box, cigarette, pen, pencil, cube"
+
+    Note:
+        Call this method when the user asks "What objects can you see?" or
+        "What can you pick up?" to show detection capabilities.
     """
     try:
         labels = env.get_object_labels_as_string()
@@ -486,14 +534,38 @@ def get_object_labels_as_string() -> str:
 @log_tool_call_with_explanation
 def add_object_name2object_labels(object_name: str) -> str:
     """
-    Call this method if the user wants to add another object to the list of recognizable objects. Adds the
-    object called object_name to the list of recognizable objects.
+    Add a new object type to the list of recognizable objects.
+
+    Extends the detection system to recognize additional object types. The vision
+    model will attempt to detect this object in subsequent scans.
+
+    Examples:
+        add_object_name2object_labels("screwdriver")
+        # Returns: "✓ Added 'screwdriver' to the list of recognizable objects"
+        # Now the robot will look for screwdrivers in the workspace
+
+        add_object_name2object_labels("red ball")
+        # Adds "red ball" to detection labels
+
+        add_object_name2object_labels("smartphone")
+        # Vision system will now attempt to detect smartphones
+
+        # Workflow:
+        # 1. add_object_name2object_labels("wrench")
+        # 2. get_object_labels_as_string()  # Verify "wrench" is included
+        # 3. get_detected_objects()  # System will now detect wrenches
 
     Args:
-        object_name (str): The name of the object that should also be recognizable by the robot.
+        object_name (str): Name of the new object to recognize. Should be descriptive
+            and match the object's appearance. Case-sensitive for future detection.
 
     Returns:
-        str: Message saying that the given object_name was added to the list of recognizable objects.
+        str: Confirmation message that the object was added to recognition list,
+            or error if object_name is invalid.
+
+    Note:
+        The vision model's ability to detect the new object depends on its training.
+        Well-known objects (tools, office supplies) are more likely to be detected.
     """
     try:
         if not object_name or not isinstance(object_name, str):
@@ -521,38 +593,29 @@ def pick_place_object(
     z_offset: float = 0.001,
 ) -> str:
     """
-    Command the pick-and-place robot arm to pick a specific object and place it using its gripper.
-    The gripper will move to the specified 'pick_coordinate' and pick the named object. Then it will move to the
-    specified 'place_coordinate' and place the object there. If you have to pick-and-place an object, call this
-    function and not pick_object() followed by place_object().
+    Pick an object and place it at a target location in a single operation.
 
-    Example calls:
-    robot.pick_place_object(
-        object_name='chocolate bar',
-        pick_coordinate=[-0.1, 0.01],
-        place_coordinate=[0.1, 0.11],
-        location=Location.RIGHT_NEXT_TO
-    )
-    --> Picks the chocolate bar that is located at world coordinates [-0.1, 0.01] and places it right next to an
-    object that exists at world coordinate [0.1, 0.11].
+    The gripper moves to pick_coordinate, grasps the object, moves to place_coordinate,
+    and releases it. Preferred over separate pick_object() and place_object() calls.
 
-    robot.pick_place_object(
-        object_name='cube',
-        pick_coordinate=[0.2, 0.05],
-        place_coordinate=[0.3, 0.1],
-        location=Location.ON_TOP_OF,
-        z_offset=0.02
-    )
-    --> Picks the cube with 2cm z-offset (useful if on top of another object).
+    Examples:
+        pick_place_object("chocolate bar", [-0.1, 0.01], [0.1, 0.11], "right next to")
+        # Picks chocolate bar and places it right next to object at [0.1, 0.11]
+
+        pick_place_object("cube", [0.2, 0.05], [0.3, 0.1], "on top of", z_offset=0.02)
+        # Picks cube with 2cm z-offset and places it on top of target object
+
+        pick_place_object("pen", [0.15, -0.05], [0.25, 0.0], None)
+        # Picks pen and places at exact coordinates (no relative positioning)
 
     Args:
-        object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
-        the robot's workspace.
-        pick_coordinate (List[float]): The world coordinates [x, y] where the object should be picked up. Use these
-        coordinates to identify the object's exact position.
-        place_coordinate (List[float]): The world coordinates [x, y] where the object should be placed at.
-        location (Location or str): Specifies the relative placement position of the picked object in relation to an
-        object being at the 'place_coordinate'. Possible values are defined in the `Location` Enum:
+        object_name (str): Name of object to pick. Must match detection exactly.
+        pick_coordinate (List[float]): World coordinates [x, y] in meters where
+            the object is currently located. Get from get_detected_objects().
+        place_coordinate (List[float]): Target world coordinates [x, y] in meters.
+            Final position depends on the location parameter.
+        location (Union[Location, str, None]): Relative placement position.
+            Possible values are defined in the `Location` Enum:
             - `Location.LEFT_NEXT_TO`: Left of the reference object.
             - `Location.RIGHT_NEXT_TO`: Right of the reference object.
             - `Location.ABOVE`: Above the reference object.
@@ -560,12 +623,17 @@ def pick_place_object(
             - `Location.ON_TOP_OF`: On top of the reference object.
             - `Location.INSIDE`: Inside the reference object.
             - `Location.NONE`: No specific location relative to another object.
-        or 'left next to', 'right next to', 'above', 'below', 'on top of', 'inside'
-        z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
-        Useful for picking objects that are stacked on top of other objects.
+            Options as str: "left next to", "right next to", "above", "below", "on top of",
+            "inside", or None for exact coordinates.
+        z_offset (float): Height offset in meters for picking (default: 0.001).
+            Use 0.02 or higher if object is stacked on another object.
 
     Returns:
-        str: Success message or error description
+        str: Success message with pick and place coordinates, or error description.
+
+    Note:
+        Always call get_detected_objects() first to get current object positions.
+        Object names are case-sensitive and must match detection exactly.
     """
     try:
         success = robot.pick_place_object(
@@ -594,25 +662,36 @@ def pick_place_object(
 @validate_input(PickObjectInput)
 def pick_object(object_name: str, pick_coordinate: List[float], z_offset: float = 0.001) -> str:
     """
-    Command the pick-and-place robot arm to pick up a specific object using its gripper.
-    The gripper will move to the specified 'pick_coordinate' and pick the named object.
+    Pick up a specific object using the robot gripper.
 
-    Example calls:
-    robot.pick_object("pen", [0.01, -0.15])
-    --> Picks the pen that is located at world coordinates [0.01, -0.15].
+    The gripper moves to pick_coordinate, closes to grasp the object, and lifts it.
+    Must be followed by place_object() to complete the operation.
 
-    robot.pick_object("pen", [0.01, -0.15], z_offset=0.02)
-    --> Picks pen with 2cm offset above detected position (useful for stacked objects).
+    Examples:
+        pick_object("pen", [0.01, -0.15])
+        # Picks pen at world coordinates [0.01, -0.15]
+
+        pick_object("cube", [0.20, 0.05])
+        # Picks cube with default z_offset
+
+        pick_object("pen", [0.01, -0.15], z_offset=0.02)
+        # Picks pen with 2cm offset above detected position
+        # Useful if pen is on top of another object
 
     Args:
-        object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
-        the robot's workspace.
-        pick_coordinate (List[float]): The world coordinates [x, y] where the object should be picked up. Use these
-        coordinates to identify the object's exact position.
-        z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
-        Useful for picking objects that are stacked on top of other objects.
+        object_name (str): Name of the object to pick. Ensure this name matches
+            an object visible in the robot's workspace. Case-sensitive.
+        pick_coordinate (List[float]): World coordinates [x, y] in meters where
+            the object is located. Get these from get_detected_objects().
+        z_offset (float): Additional height offset in meters (default: 0.001).
+            Increase if object is on top of another object (e.g., 0.02 for 2cm).
+
     Returns:
-        str: Success message or error description
+        str: Success message with coordinates, or error description if failed.
+
+    Note:
+        Must be followed by place_object() to complete pick-and-place operation.
+        For complete operation in one call, use pick_place_object() instead.
     """
     try:
         success = robot.pick_object(object_name=object_name, pick_coordinate=pick_coordinate, z_offset=z_offset)
@@ -631,28 +710,45 @@ def pick_object(object_name: str, pick_coordinate: List[float], z_offset: float 
 @validate_input(PlaceObjectInput)
 def place_object(place_coordinate: List[float], location: Union[Location, str, None] = None) -> str:
     """
-    Instruct the pick-and-place robot arm to place a picked object at the specified 'place_coordinate'. The
-    function moves the gripper to the specified 'place_coordinate' and calculates the exact placement position from
-    the given 'location'. Before calling this function you have to call pick_object() to pick an object.
+    Place a previously picked object at the specified location.
 
-    Example call:
-    robot.place_object([0.2, 0.0], "left next to")
-    --> Places the gripped object left next to world coordinate [0.2, 0.0].
+    Moves the gripper to place_coordinate and releases the object. Must be preceded
+    by pick_object(). The exact placement position is calculated based on the location parameter.
+
+    Examples:
+        place_object([0.2, 0.0], "left next to")
+        # Places gripped object to the left of coordinate [0.2, 0.0]
+
+        place_object([0.25, 0.05], "on top of")
+        # Stacks gripped object on top of object at [0.25, 0.05]
+
+        place_object([0.18, -0.10], None)
+        # Places object at exact coordinates [0.18, -0.10]
+
+        # Complete workflow:
+        # pick_object("cube", [0.15, -0.05])
+        # place_object([0.20, 0.10], "right next to")
 
     Args:
-        place_coordinate (List[float]): Target coordinates [x, y] in meters.
-        location (str, optional): Relative placement position. Options:
-            - 'left next to': Place to the left
-            - 'right next to': Place to the right
-            - 'above': Place above (farther in X)
-            - 'below': Place below (closer in X)
-            - 'on top of': Stack on top
-            - 'inside': Place inside container
-            - 'close to': Within 2cm radius
+        place_coordinate (List[float]): Target coordinates [x, y] in meters where
+            the object should be placed. Must be within workspace bounds.
+        location (Union[Location, str, None]): Relative placement position. Options:
+            - "left next to": Place to the left (increases Y)
+            - "right next to": Place to the right (decreases Y)
+            - "above": Place above (increases X, farther from robot)
+            - "below": Place below (decreases X, closer to robot)
+            - "on top of": Stack on top of object at coordinate
+            - "inside": Place inside container at coordinate
+            - "close to": Place within 2cm radius
             - None: Use exact coordinate (default)
 
     Returns:
-        str: Success message or error description
+        str: Success message with placement coordinates and location,
+            or error description if placement failed.
+
+    Note:
+        Must call pick_object() before calling this function. For complete
+        pick-and-place in one operation, use pick_place_object() instead.
     """
     try:
         success = robot.place_object(place_coordinate=place_coordinate, location=location)
@@ -671,25 +767,45 @@ def place_object(place_coordinate: List[float], location: Union[Location, str, N
 @validate_input(PushObjectInput)
 def push_object(object_name: str, push_coordinate: List[float], direction: str, distance: float) -> str:
     """
-    Direct the pick-and-place robot arm to push a specific object to a new position.
-    This function should only be called if it is not possible to pick the object.
-    An object cannot be picked if its shorter side is larger than the gripper (~5cm).
+    Push a specific object to a new position using the robot gripper.
 
-    Example call:
-    robot.push_object("large box", [0.25, 0.05], "right", 50.0)
-    --> Pushes the large box 50mm to the right from its current position.
+    Use this function when an object is too large to grasp (width > 5cm). The robot
+    approaches the object from the appropriate side and pushes it in the specified direction.
+
+    Examples:
+        push_object("large box", [0.25, 0.05], "right", 50.0)
+        # Pushes large box 50mm (5cm) to the right from its current position
+
+        push_object("book", [0.20, -0.03], "up", 30.0)
+        # Pushes book 30mm upward (away from robot, increases X)
+
+        push_object("tray", [0.18, 0.08], "left", 40.0)
+        # Pushes tray 40mm to the left (increases Y)
+
+        # Direction mapping:
+        # "up"    → pushes away from robot (increases X coordinate)
+        # "down"  → pushes toward robot (decreases X coordinate)
+        # "left"  → pushes left (increases Y coordinate)
+        # "right" → pushes right (decreases Y coordinate)
 
     Args:
-        object_name (str): The name of the object to be pushed.
-        Ensure the name matches an object in the robot's environment.
-        push_coordinate: The world coordinates [x, y] where the object to be pushed is located.
-        These coordinates indicate the initial position of the object.
-        direction (str): The direction in which the object should be pushed.
-        Valid options are: "up", "down", "left", "right".
-        distance: The distance (in millimeters) to push the object in the specified direction.
-        Ensure the value is within the robot's operational range.
+        object_name (str): Name of the object to push. Ensure the name matches
+            an object in the robot's environment. Case-sensitive.
+        push_coordinate (List[float]): World coordinates [x, y] in meters where
+            the object is currently located. Get from get_detected_objects().
+        direction (str): Direction to push the object. Must be one of:
+            "up", "down", "left", "right".
+        distance (float): Distance to push in millimeters. Typical range: 10.0 to 100.0.
+            Note: This is in millimeters, not meters (50.0 = 5cm).
+
     Returns:
-        str: Success message or error description
+        str: Success message with object name, starting position, direction, and distance,
+            or error description if push operation failed.
+
+    Note:
+        Use push_object() instead of pick_place_object() when object width exceeds
+        gripper capacity (~5cm). The robot approaches from the opposite side of the
+        push direction to avoid collisions.
     """
     try:
         success = robot.push_object(object_name, push_coordinate, direction, distance)
@@ -715,37 +831,39 @@ def move2by(
     z_offset: float = 0.001,
 ) -> str:
     """
-    Command the robot to pick an object and move it a given distance in a specified direction.
-    This is a convenience function that combines pick and place operations.
+    Pick an object and move it a specified distance in a given direction.
 
-    Example calls:
-    robot.move2by(
-        object_name='pencil',
-        pick_coordinate=[-0.11, 0.21],
-        direction='left',
-        distance=0.02
-    )
-    --> Picks pencil at [-0.11, 0.21] and moves it 2cm to the left to [-0.11, 0.23].
+    This is a convenience function that combines pick and place operations,
+    calculating the target position based on direction and distance.
 
-    robot.move2by(
-        object_name='cube',
-        pick_coordinate=[-0.11, 0.21],
-        direction='up',
-        distance=0.03,
-        z_offset=0.02
-    )
-    --> Picks cube with 2cm z-offset and moves it 3cm upwards.
+    Examples:
+        move2by("pencil", [-0.11, 0.21], "left", 0.02)
+        # Picks pencil at [-0.11, 0.21] and moves it 2cm left to [-0.11, 0.23]
+
+        move2by("cube", [-0.11, 0.21], "up", 0.03)
+        # Moves cube 3cm upward (increases X coordinate)
+
+        move2by("pen", [0.15, -0.05], "right", 0.04, z_offset=0.02)
+        # Picks pen with 2cm z-offset and moves it 4cm right
+
+        # Direction mapping:
+        # "left"  → increases Y (toward positive Y)
+        # "right" → decreases Y (toward negative Y)
+        # "up"    → increases X (away from robot)
+        # "down"  → decreases X (toward robot)
 
     Args:
         object_name (str): Name of object to move. Must match detection exactly.
-        pick_coordinate (List[float]): Current world coordinates [x, y] in meters.
-        direction (str): Direction to move. Options: 'left', 'right', 'up', 'down'.
+        pick_coordinate (List[float]): Current world coordinates [x, y] in meters
+            where the object is located.
+        direction (str): Direction to move. Must be one of: "left", "right", "up", "down".
         distance (float): Distance in meters to move the object.
+            Typical range: 0.01 to 0.10 (1cm to 10cm).
         z_offset (float): Height offset in meters for picking (default: 0.001).
-            Useful if object is on top of or blocking another object.
+            Use higher values (e.g., 0.02) if object is on top of another object.
 
     Returns:
-        str: Success message or error description
+        str: Success message with pick and place coordinates, or error description.
     """
     try:
         if not isinstance(pick_coordinate, list) or len(pick_coordinate) != 2:
@@ -789,18 +907,34 @@ def move2by(
 def move2observation_pose(workspace_id: str) -> str:
     """
     Move robot to observation position above the specified workspace.
-    The gripper will hover over the workspace for optimal object detection.
-    Must be called before picking or placing objects in a workspace.
 
-    Example call:
-    robot.move2observation_pose("niryo_ws")
-    --> Moves to observation pose above niryo_ws workspace.
+    The gripper hovers over the workspace at optimal height and angle for
+    object detection. Must be called before picking or placing objects.
+
+    Examples:
+        move2observation_pose("niryo_ws")
+        # Moves to observation pose above niryo_ws workspace
+
+        move2observation_pose("gazebo_1")
+        # Moves to observation pose for simulation workspace
+
+        # Typical workflow:
+        # 1. move2observation_pose("niryo_ws")
+        # 2. get_detected_objects()
+        # 3. pick_place_object(...)
+        # 4. move2observation_pose("niryo_ws")  # Return to home
 
     Args:
         workspace_id (str): ID of the workspace (e.g., "niryo_ws", "gazebo_1").
+            Must match a configured workspace in the system.
 
     Returns:
-        str: Success message or error description
+        str: Success message confirming movement to observation pose,
+            or error description if movement failed.
+
+    Note:
+        The robot automatically moves to observation pose before detection
+        operations, but you may need to call this explicitly for other tasks.
     """
     try:
         if not workspace_id or not isinstance(workspace_id, str):
@@ -816,12 +950,31 @@ def move2observation_pose(workspace_id: str) -> str:
 @log_tool_call_with_explanation
 def clear_collision_detected() -> str:
     """
-    Reset the internal "collision_detected" flag of the Niryo robot.
-    Call this after a collision event to resume normal operation.
-    Note: This is Niryo-specific functionality.
+    Reset the internal collision detection flag of the Niryo robot.
+
+    Call this after a collision event to resume normal operation. This is
+    Niryo-specific functionality.
+
+    Examples:
+        clear_collision_detected()
+        # Clears collision flag
+        # Returns: "✓ Collision detection flag cleared"
+
+        # Recovery workflow:
+        # 1. Collision occurs
+        # 2. clear_collision_detected()
+        # 3. calibrate()  # Optional
+        # 4. Resume operations
+
+        # After unexpected stop:
+        # clear_collision_detected()
+        # move2observation_pose("niryo_ws")
 
     Returns:
-        str: Success message or error description
+        str: Success message if flag cleared, or error description if failed.
+
+    Note:
+        This is a Niryo-specific function. May not work with other robot types.
     """
     try:
         robot.robot().robot_ctrl().clear_collision_detected()
@@ -835,10 +988,28 @@ def clear_collision_detected() -> str:
 def calibrate() -> str:
     """
     Calibrate the robot's joints for accurate movement.
-    This should be called if the robot shows positioning errors or after power-up.
+
+    This procedure moves each joint to its home position and resets the robot's
+    internal coordinate system. Should be called after power-up or if positioning
+    errors are observed.
+
+    Examples:
+        calibrate()
+        # Robot moves through calibration sequence
+        # Returns: "✓ Robot calibration completed successfully"
+
+        # Typical usage:
+        # 1. Power on robot
+        # 2. calibrate()
+        # 3. Proceed with normal operations
+
+        # After collision:
+        # 1. clear_collision_detected()
+        # 2. calibrate()
+        # 3. Resume tasks
 
     Returns:
-        str: Success message or error description
+        str: Success message if calibration completed, or error description if failed.
     """
     try:
         success = robot.calibrate()
@@ -866,35 +1037,39 @@ def get_detected_objects(
 ) -> str:
     """
     Get list of all objects detected by the camera in the workspace.
-    Supports optional spatial and label filtering.
 
-    Example calls:
-    get_detected_objects()
-    --> Returns all detected objects.
+    Supports optional spatial filtering (left/right/above/below) and label filtering.
+    The robot automatically moves to observation pose before detection.
 
-    get_detected_objects(location="close to", coordinate=[0.2, 0.0])
-    --> Returns objects within 2cm of [0.2, 0.0].
+    Examples:
+        get_detected_objects()
+        # Returns: All detected objects in workspace
 
-    get_detected_objects(label="pencil")
-    --> Returns all objects labeled "pencil".
+        get_detected_objects(location="close to", coordinate=[0.2, 0.0])
+        # Returns: Objects within 2cm of [0.2, 0.0]
 
-    get_detected_objects(location="left next to", coordinate=[0.20, 0.0], label="cube")
-    --> Returns cubes to the left of [0.20, 0.0].
+        get_detected_objects(label="pencil")
+        # Returns: All objects labeled "pencil"
+
+        get_detected_objects(location="left next to", coordinate=[0.20, 0.0], label="cube")
+        # Returns: Cubes to the left of [0.20, 0.0]
 
     Args:
-        location (Location or str, optional): Spatial filter. Options:
-            - "left next to": Objects left of coordinate
-            - "right next to": Objects right of coordinate
-            - "above": Objects above coordinate (farther in X)
-            - "below": Objects below coordinate (closer in X)
+        location (Union[Location, str]): Spatial filter relative to coordinate. Options:
+            - "left next to": Objects left of coordinate (positive Y)
+            - "right next to": Objects right of coordinate (negative Y)
+            - "above": Objects above coordinate (positive X)
+            - "below": Objects below coordinate (negative X)
             - "close to": Objects within 2cm radius
             - None: No spatial filter (default)
-        coordinate (List[float], optional): Reference coordinate [x, y] in meters.
-            Required if location is specified.
-        label (str, optional): Filter by object name. Case-sensitive.
+        coordinate (Optional[List[float]]): Reference coordinate [x, y] in meters.
+            Required if location is specified. Must be within workspace bounds.
+        label (Optional[str]): Filter by object name. Case-sensitive, must match
+            detection exactly (e.g., "pencil", not "Pencil").
 
     Returns:
-        str: JSON string of detected objects with positions and dimensions, or error message
+        str: JSON string of detected objects with positions, dimensions, and orientations,
+            or message if no objects match the criteria.
     """
     try:
         env.robot_move2home_observation_pose()
@@ -918,26 +1093,31 @@ def get_detected_objects(
 @log_tool_call_with_explanation
 def get_detected_object(coordinate: List[float], label: Optional[str] = None) -> str:
     """
-    Retrieves a detected object at or near a specified world coordinate, optionally filtering by label.
+    Retrieve a detected object at or near a specified world coordinate.
 
-    This method checks for objects detected by the camera that are close to the specified coordinate (within
-    2 centimeters). If multiple objects meet the criteria, the first object in the list is returned.
+    This method checks for objects detected by the camera that are close to the
+    specified coordinate (within 2 centimeters). If multiple objects meet the
+    criteria, the first object in the list is returned.
 
-    Example calls:
-    get_detected_object([0.18, -0.05])
-    --> Finds any object at or near [0.18, -0.05].
+    Examples:
+        get_detected_object([0.18, -0.05])
+        # Returns: Object at [0.180, -0.050] (any object type)
 
-    get_detected_object([0.18, -0.05], label="pen")
-    --> Finds specifically a "pen" at that location.
+        get_detected_object([0.18, -0.05], label="pen")
+        # Returns: Only a "pen" object at that location
+
+        get_detected_object([0.25, 0.0])
+        # Returns: Object near workspace center
 
     Args:
         coordinate (List[float]): A 2D coordinate in the world coordinate system [x, y].
             Only objects within a 2-centimeter radius of this coordinate are considered.
-        label (Optional[str]): An optional filter for the object's label. If specified, only an object
-            with the matching label is returned.
+        label (Optional[str]): An optional filter for the object's label. If specified,
+            only an object with the matching label is returned. Case-sensitive.
 
     Returns:
-        str: JSON string of the found object or message if not found
+        str: JSON string of the found object with position and dimensions,
+            or message if no object found at that location.
     """
     try:
         if not isinstance(coordinate, list) or len(coordinate) != 2:
@@ -967,10 +1147,23 @@ def get_detected_object(coordinate: List[float], label: Optional[str] = None) ->
 @log_tool_call_with_explanation
 def get_largest_detected_object() -> str:
     """
-    Returns the largest detected object based on its size in square meters.
+    Return the largest detected object based on its area in square meters.
+
+    The robot moves to observation pose, detects all objects, and identifies
+    the one with the largest area (width × height).
+
+    Examples:
+        get_largest_detected_object()
+        # Returns: {"label": "blue square", "position": {...}, ...}
+
+        # Use result for manipulation:
+        # 1. largest = get_largest_detected_object()
+        # 2. Parse JSON to get position
+        # 3. pick_object(largest["label"], ...)
 
     Returns:
-        str: Largest object information or error message
+        str: JSON string with largest object information including label, position,
+            dimensions, and area. Returns "No objects detected" if workspace is empty.
     """
     try:
         env.robot_move2home_observation_pose()
@@ -994,10 +1187,23 @@ def get_largest_detected_object() -> str:
 @log_tool_call_with_explanation
 def get_smallest_detected_object() -> str:
     """
-    Returns the smallest detected object based on its size in square meters.
+    Return the smallest detected object based on its area in square meters.
+
+    The robot moves to observation pose, detects all objects, and identifies
+    the one with the smallest area (width × height).
+
+    Examples:
+        get_smallest_detected_object()
+        # Returns: {"label": "pen", "position": {...}, ...}
+
+        # Use for precise picking:
+        # 1. smallest = get_smallest_detected_object()
+        # 2. Extract coordinates
+        # 3. pick_object(smallest["label"], ...)
 
     Returns:
-        str: Smallest object information or error message
+        str: JSON string with smallest object information including label, position,
+            dimensions, and area. Returns "No objects detected" if workspace is empty.
     """
     try:
         env.robot_move2home_observation_pose()
@@ -1020,13 +1226,28 @@ def get_smallest_detected_object() -> str:
 @log_tool_call_with_explanation
 def get_detected_objects_sorted(ascending: bool = True) -> str:
     """
-    Get detected objects sorted by size.
+    Get detected objects sorted by size (area in square meters).
+
+    The robot moves to observation pose and detects all objects, then sorts
+    them by their area (width × height).
+
+    Examples:
+        get_detected_objects_sorted(ascending=True)
+        # Returns: [smallest object, medium object, largest object]
+
+        get_detected_objects_sorted(ascending=False)
+        # Returns: [largest object, medium object, smallest object]
+
+        get_detected_objects_sorted()
+        # Returns: Objects sorted smallest to largest (default)
 
     Args:
-        ascending: If True, sort smallest to largest; if False, largest to smallest
+        ascending (bool): If True, sort smallest to largest. If False, sort
+            largest to smallest. Default is True.
 
     Returns:
-        str: Sorted list of objects or error message
+        str: JSON string of sorted objects with positions and sizes,
+            or message if no objects detected.
     """
     try:
         if not isinstance(ascending, bool):
@@ -1088,7 +1309,29 @@ def get_detected_objects_sorted(ascending: bool = True) -> str:
 @mcp.tool
 @log_tool_call
 def speak(text: str) -> str:
-    """Make the robot speak a message using text-to-speech."""
+    """
+    Make the robot speak a message using text-to-speech.
+
+    The robot will announce the provided text through its audio output system,
+    providing audible feedback to users.
+
+    Examples:
+        speak("I have picked up the pencil")
+        # Robot says: "I have picked up the pencil"
+
+        speak("Task completed successfully")
+        # Robot announces task completion
+
+        speak("Warning: Object detected in workspace")
+        # Robot provides audio warning
+
+    Args:
+        text (str): The message to speak. Must be a non-empty string.
+            Can include natural language sentences.
+
+    Returns:
+        str: Confirmation message with the text being spoken, or error if failed.
+    """
     try:
         if not text or not isinstance(text, str):
             return "❌ Validation Error: text must be a non-empty string"
@@ -1104,11 +1347,25 @@ def set_user_task(task: str) -> str:
     """
     Set the current user task for display in video recordings.
 
+    This function updates the task text that appears in video overlays,
+    allowing viewers to see what command the user has given.
+
+    Examples:
+        set_user_task("Pick up the red cube")
+        # Video overlay shows: "Task: Pick up the red cube"
+
+        set_user_task("Organize workspace by color")
+        # Video overlay updates to show new task
+
+        set_user_task("Sort objects by size")
+        # Task text changes in video feed
+
     Args:
-        task: The user's natural language task/command
+        task (str): The user's natural language task or command.
+            This will be displayed in video recordings.
 
     Returns:
-        str: Confirmation message
+        str: Confirmation message that the task has been set.
     """
     global current_user_task
 

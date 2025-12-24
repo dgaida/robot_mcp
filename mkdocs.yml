@@ -68,7 +68,9 @@ nav:
       - API Reference: api.md
       - Examples: examples.md
   - Troubleshooting: troubleshooting.md
-  - API Details: mcp_api_reference.md
+  - API Reference:
+      - Auto-generated: api_reference_auto.md
+      - Manual: mcp_api_reference.md
 
 extra:
   social:
