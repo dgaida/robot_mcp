@@ -1,0 +1,45 @@
+graph TB
+    subgraph redis_robot_comm["<b>redis_robot_comm</b>"]
+        redis_images["Redis Stream<br/>robot_camera<br/>(Images)"]
+        redis_labels["Redis Stream<br/>detectable_labels<br/>(Labels)"]
+        redis_objects["Redis Stream<br/>detected_objects<br/>(Detections)"]
+        redis_annotated["Redis Stream<br/>annotated_camera<br/>(Annotations)"]
+    end
+
+    subgraph Robot_Control["<b>Robot Control</b>"]
+        mcp_server["<b>robot_mcp</b><br/>MCP Server"]
+        robot_env["<b>robot_environment</b>"]
+        robot_ws["<b>robot_workspace</b>"]
+        text2speech["<b>text2speech</b>"]
+        robot_pic["🤖 Robot<br/>Hardware"]
+    end
+
+    mcp_client["<b>robot_mcp</b><br/>MCP Client<br/>(LLM Interface)"]
+    vision_script["<b>vision_detect_segment</b><br/>detect_objects_publish_<br/>annotated_frames.py"]
+    viz_script["<b>redis_robot_comm</b><br/>visualize_annotated_<br/>frames.py"]
+
+    %% Bidirectional connections
+    mcp_client <-->|Tool Calls<br/>Results| mcp_server
+    mcp_server <--> robot_env
+    robot_pic <-->|Raw Frames<br/>Commands| robot_env
+    robot_env <-->|Receive/Update<br/>Detectable Objects| redis_labels
+    robot_env --> robot_ws
+
+    %% Data flow arrows
+    robot_env -->|Publish<br/>Raw Frames| redis_images
+    robot_env -->|Command| text2speech
+    redis_objects -->|Receive<br/>Detections| robot_env
+    redis_images -->|Subscribe<br/>Raw Frames| vision_script
+    vision_script -->|Publish<br/>Detections| redis_objects
+    vision_script -->|Publish<br/>Detectable<br/>Objects| redis_labels
+    vision_script -->|Publish<br/>Annotated Frames| redis_annotated
+    redis_annotated -->|Subscribe<br/>Annotated Frames| viz_script
+
+    %% Styling
+    classDef repository fill:#bbdefb,stroke:#1976d2,stroke-width:2px
+    classDef component fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef infrastructure fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+
+    class mcp_client,mcp_server,robot_env,robot_ws,text2speech,vision_script,viz_script repository
+    class redis_images,redis_labels,redis_objects,redis_annotated component
+    class robot_pic infrastructure

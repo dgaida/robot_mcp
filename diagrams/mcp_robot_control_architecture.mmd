@@ -1,0 +1,61 @@
+graph TB
+    user["<b>User</b>"]
+
+    subgraph User_Interface["<b>User Interface Layer</b>"]
+        speech2text["<b>Speech2Text</b><br/>(Whisper)"]
+        gui["GUI<br/>(Gradio)"]
+        llm["LLM<br/>(OpenAI/Groq/<br/>Gemini/Ollama)"]
+        mcpclient["<b>FastMCP Client</b>"]
+    end
+
+    mcp["<b>FastMCP Server</b>"]
+    redis["Redis Server<br/>(Streams &<br/>Messages)"]
+
+    subgraph Core_Robot["<b>Robot System</b>"]
+        environment["<b>Robot Controller</b>"]
+        workspace["<b>Robot Workspace</b>"]
+        arm["<b>Robot Arm</b>"]
+        camera["<b>Camera</b>"]
+        text2speech["<b>Text2Speech</b><br/>(Kokoro)"]
+    end
+
+    vision["<b>Object Detection,</br>Tracking<br/>and Segmentation</b>"]
+
+    %% User Interface connections
+    user -->|Chat Interface| gui
+    user -->|Voice Commands| speech2text
+    speech2text -->|Transcriptions| gui
+    gui -->|User Commands| mcpclient
+    llm <-->|Task Analysis| mcpclient
+    mcpclient <-->|Tool Calls<br/>MCP Protocol| mcp
+
+    %% MCP connections
+    mcp -->|Manipulation<br/>Commands| environment
+    environment -->|Manipulation<br/>Commands| arm
+    %% mcp -->|Detection<br/>Requests| redis
+
+    %% Environment connections
+    environment -->|Objects in<br/>Image Plane &</br>Camera Pose| workspace
+    workspace -->|Objects in<br/>World</br>Coordinates| environment
+    environment -->|User Feedback| text2speech
+    redis -->|Objects in<br/>Image Plane &</br>Camera Pose| environment
+    camera -->|Frames &</br>Camera Pose| redis
+    text2speech -->|Audio Feedback| user
+    mcp -->|Audio Feedback</br>Text2Speech| user
+
+    %% Redis communication
+    vision -->|Objects with</br>Bounding Boxes</br>and Masks| redis
+    redis -->|Frames| vision
+
+    %% Styling
+    classDef repository fill:#bbdefb,stroke:#1976d2,stroke-width:2px
+    classDef interface fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef userStyle fill:#d85699,stroke:#388e3c,stroke-width:2px
+    classDef llmStyle fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    classDef infrastructure fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+
+    class environment,workspace,arm repository
+    class gui,speech2text,text2speech interface
+    class mcp,mcpclient,llm llmStyle
+    class redis,vision,camera infrastructure
+    class user userStyle
