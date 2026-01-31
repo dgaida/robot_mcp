@@ -25,8 +25,7 @@ from robot_environment import Environment
 from robot_workspace import Location
 
 # Import schemas
-sys.path.insert(0, str(Path(__file__).parent))
-from schemas import (
+from .schemas import (
     GetDetectedObjectsInput,
     PickObjectInput,
     PickPlaceInput,

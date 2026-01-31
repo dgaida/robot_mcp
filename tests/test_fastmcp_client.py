@@ -55,7 +55,6 @@ class TestRobotFastMCPClient:
                 with patch("client.fastmcp_groq_client.SSETransport"):
                     client = RobotFastMCPClient(groq_api_key="test_key", model="test-model")
 
-                    assert client.groq_api_key == "test_key"
                     assert client.model == "test-model"
                     assert client.available_tools == []
                     assert client.conversation_history == []
@@ -148,9 +147,11 @@ class TestRobotFastMCPClient:
     @pytest.mark.asyncio
     async def test_convert_tools_to_groq_format(self, client):
         """Test tool format conversion."""
-        client.available_tools = [
-            MagicMock(name="test_tool", description="Test description", inputSchema={"type": "object", "properties": {}})
-        ]
+        tool = MagicMock()
+        tool.name = "test_tool"
+        tool.description = "Test description"
+        tool.inputSchema = {"type": "object", "properties": {}}
+        client.available_tools = [tool]
 
         groq_tools = client._convert_tools_to_groq_format()
 

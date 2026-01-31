@@ -35,7 +35,12 @@ except AttributeError:
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from redis_robot_comm import RedisImageStreamer, RedisTextOverlayManager
-from speech2text import Speech2Text
+
+try:
+    from speech2text import Speech2Text
+except (ImportError, OSError):
+    print("⚠️ speech2text not available")
+    Speech2Text = None
 
 # Import FastMCP client
 try:
@@ -47,7 +52,7 @@ except ImportError:
     HAS_MCP_CLIENT = False
 
 
-class EnhancedRobotGUI:
+class RobotMCPGUI:
     """Enhanced GUI with Redis visualization and multi-LLM support."""
 
     def __init__(
@@ -278,7 +283,7 @@ class EnhancedRobotGUI:
         return html
 
 
-def create_interface(gui: EnhancedRobotGUI):
+def create_gradio_interface(gui: RobotMCPGUI):
     """Create Gradio interface compatible with all Gradio versions."""
 
     # Inline CSS for compatibility
@@ -375,7 +380,8 @@ def create_interface(gui: EnhancedRobotGUI):
         clear_btn.click(fn=handle_clear, outputs=[chatbot])
 
         # Auto-refresh camera feed
-        demo.load(fn=update_camera, outputs=[camera_feed], every=0.1)  # Update at ~10 FPS
+        timer = gr.Timer(0.1)
+        timer.tick(fn=update_camera, outputs=[camera_feed])
 
     return demo
 
@@ -400,7 +406,7 @@ async def main():
     load_dotenv(dotenv_path="secrets.env")
 
     # Initialize GUI
-    gui = EnhancedRobotGUI(
+    gui = RobotMCPGUI(
         api_choice=args.api,
         model=args.model,
         robot_id=args.robot,
@@ -410,7 +416,7 @@ async def main():
     )
 
     # Create and launch interface
-    demo = create_interface(gui)
+    demo = create_gradio_interface(gui)
 
     print("\n" + "=" * 60)
     print("🚀 LAUNCHING GUI")
