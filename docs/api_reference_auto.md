@@ -1,6 +1,6 @@
 # Robot MCP - Auto-Generated API Reference
 
-**Generated:** 2025-12-24 08:30:57
+**Generated:** 2026-01-31 16:21:13
 **Source:** `server/fastmcp_robot_server_unified.py`
 **Total Tools:** 19
 
