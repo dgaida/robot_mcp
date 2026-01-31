@@ -21,12 +21,7 @@ class TestRobotMCPGUI:
             with patch("robot_gui.mcp_app.Speech2Text") as mock_speech:
                 with patch("robot_gui.mcp_app.RedisImageStreamer") as mock_streamer:
                     with patch("robot_gui.mcp_app.RedisTextOverlayManager") as mock_text:
-                        yield {
-                            "client": mock_client,
-                            "speech": mock_speech,
-                            "streamer": mock_streamer,
-                            "text": mock_text
-                        }
+                        yield {"client": mock_client, "speech": mock_speech, "streamer": mock_streamer, "text": mock_text}
 
     @pytest.fixture
     def gui(self, mock_dependencies):
@@ -37,7 +32,7 @@ class TestRobotMCPGUI:
             robot_id="niryo",
             use_simulation=True,
             redis_host="localhost",
-            redis_port=6379
+            redis_port=6379,
         )
         return gui
 
@@ -93,8 +88,9 @@ class TestRobotMCPGUI:
         gui.mcp_connected = False
         history = []
 
-        async for updated_history in gui.process_chat("Hello", history):
-            pass
+        updated_history = []
+        async for update in gui.process_chat("Hello", history):
+            updated_history = update
 
         assert len(updated_history) == 1
         assert "not connected" in updated_history[0][1].lower()
@@ -109,8 +105,8 @@ class TestRobotMCPGUI:
 
         history = []
         updates = []
-        async for updated_history in gui.process_chat("Pick up pencil", history):
-            updates.append(list(updated_history))
+        async for update in gui.process_chat("Pick up pencil", history):
+            updates.append(list(update))
 
         assert len(updates) > 0
         final_history = updates[-1]
@@ -160,17 +156,21 @@ class TestGradioInterface:
         gui = MagicMock(spec=RobotMCPGUI)
         gui.get_status_html.return_value = "<div>Status</div>"
 
-        with patch("robot_gui.mcp_app.gr.Blocks") as mock_blocks, \
-             patch("robot_gui.mcp_app.gr.Row"), \
-             patch("robot_gui.mcp_app.gr.Column"), \
-             patch("robot_gui.mcp_app.gr.HTML"), \
-             patch("robot_gui.mcp_app.gr.Markdown"), \
-             patch("robot_gui.mcp_app.gr.Textbox"), \
-             patch("robot_gui.mcp_app.gr.Button"), \
-             patch("robot_gui.mcp_app.gr.Chatbot"), \
-             patch("robot_gui.mcp_app.gr.Examples"), \
-             patch("robot_gui.mcp_app.gr.Image"), \
-             patch("robot_gui.mcp_app.gr.Timer"):
+        with patch("robot_gui.mcp_app.gr.Blocks") as mock_blocks, patch("robot_gui.mcp_app.gr.Row"), patch(
+            "robot_gui.mcp_app.gr.Column"
+        ), patch("robot_gui.mcp_app.gr.HTML"), patch("robot_gui.mcp_app.gr.Markdown"), patch(
+            "robot_gui.mcp_app.gr.Textbox"
+        ), patch(
+            "robot_gui.mcp_app.gr.Button"
+        ), patch(
+            "robot_gui.mcp_app.gr.Chatbot"
+        ), patch(
+            "robot_gui.mcp_app.gr.Examples"
+        ), patch(
+            "robot_gui.mcp_app.gr.Image"
+        ), patch(
+            "robot_gui.mcp_app.gr.Timer"
+        ):
 
             mock_demo = MagicMock()
             mock_blocks.return_value.__enter__.return_value = mock_demo

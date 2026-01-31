@@ -190,9 +190,18 @@ class TestServerClientCommunication:
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
             # Simulate server tools
-            t1 = MagicMock(); t1.name = "pick_place_object"; t1.description = ""; t1.inputSchema = {}
-            t2 = MagicMock(); t2.name = "get_detected_objects"; t2.description = ""; t2.inputSchema = {}
-            t3 = MagicMock(); t3.name = "speak"; t3.description = ""; t3.inputSchema = {}
+            t1 = MagicMock()
+            t1.name = "pick_place_object"
+            t1.description = ""
+            t1.inputSchema = {}
+            t2 = MagicMock()
+            t2.name = "get_detected_objects"
+            t2.description = ""
+            t2.inputSchema = {}
+            t3 = MagicMock()
+            t3.name = "speak"
+            t3.description = ""
+            t3.inputSchema = {}
             expected_tools = [t1, t2, t3]
             mock_client.list_tools = AsyncMock(return_value=expected_tools)
 

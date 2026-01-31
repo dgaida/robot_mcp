@@ -11,6 +11,7 @@ from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
+
 from .schemas import (
     GetDetectedObjectsInput,
     PickObjectInput,
@@ -408,13 +409,13 @@ def move2by(
     """
     try:
         place_coordinate = pick_coordinate.copy()
-        if direction == 'left':
+        if direction == "left":
             place_coordinate[1] += distance
-        elif direction == 'right':
+        elif direction == "right":
             place_coordinate[1] -= distance
-        elif direction == 'up':
+        elif direction == "up":
             place_coordinate[0] += distance
-        elif direction == 'down':
+        elif direction == "down":
             place_coordinate[0] -= distance
         else:
             raise ValueError(f"Invalid direction '{direction}'")

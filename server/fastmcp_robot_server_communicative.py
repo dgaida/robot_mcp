@@ -18,6 +18,7 @@ from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
+
 from .schemas import (
     GetDetectedObjectsInput,
     PickPlaceInput,
