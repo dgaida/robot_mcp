@@ -190,11 +190,10 @@ class TestServerClientCommunication:
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
             # Simulate server tools
-            expected_tools = [
-                MagicMock(name="pick_place_object", description="", inputSchema={}),
-                MagicMock(name="get_detected_objects", description="", inputSchema={}),
-                MagicMock(name="speak", description="", inputSchema={}),
-            ]
+            t1 = MagicMock(); t1.name = "pick_place_object"; t1.description = ""; t1.inputSchema = {}
+            t2 = MagicMock(); t2.name = "get_detected_objects"; t2.description = ""; t2.inputSchema = {}
+            t3 = MagicMock(); t3.name = "speak"; t3.description = ""; t3.inputSchema = {}
+            expected_tools = [t1, t2, t3]
             mock_client.list_tools = AsyncMock(return_value=expected_tools)
 
             with patch("client.fastmcp_groq_client.Groq"):
@@ -203,7 +202,7 @@ class TestServerClientCommunication:
                 await client.connect()
 
             assert len(client.available_tools) == 3
-            tool_names = [t["function"]["name"] for t in client.available_tools]
+            tool_names = [t.name for t in client.available_tools]
             assert "pick_place_object" in tool_names
             assert "get_detected_objects" in tool_names
             assert "speak" in tool_names
@@ -217,10 +216,14 @@ class TestServerClientCommunication:
             mock_robot.pick_place_object.return_value = True
 
             # Valid call
-            result = pick_place_object(
-                object_name="pencil", pick_coordinate=[0.15, -0.05], place_coordinate=[0.20, 0.10], location="right next to"
+            result = pick_place_object.fn(
+                object_name="pencil",
+                pick_coordinate=[0.15, -0.05],
+                place_coordinate=[0.20, 0.10],
+                location="right next to",
+                z_offset=0.001,
             )
-            assert result is True
+            assert "Successfully picked" in result
 
             # Verify parameters passed correctly
             call_args = mock_robot.pick_place_object.call_args
