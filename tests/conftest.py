@@ -7,14 +7,14 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 # Mock broken dependency text2speech before it's imported by robot_environment
 # This fixes a ModuleNotFoundError: No module named 'text2speech.engines'
 # which occurs during test collection when robot_environment is imported.
 mock_t2s = MagicMock()
 sys.modules["text2speech"] = mock_t2s
 sys.modules["text2speech.engines"] = MagicMock()
-
-import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
