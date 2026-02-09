@@ -57,6 +57,14 @@ except ImportError:
 class RobotMCPGUI:
     """Enhanced GUI with Redis visualization and multi-LLM support."""
 
+    # Default example tasks
+    default_examples = [
+        "What objects do you see?",
+        "Pick up the pencil and place it at [0.2, 0.1]",
+        "Move the red cube to the right of the blue square",
+        "Arrange objects in a triangle pattern",
+    ]
+
     def __init__(
         self,
         api_choice: str = "groq",
@@ -116,14 +124,6 @@ class RobotMCPGUI:
         # Current frame
         self.current_frame = None
         self.frame_lock = asyncio.Lock()
-
-        # Default example tasks
-        self.default_examples = [
-            "What objects do you see?",
-            "Pick up the pencil and place it at [0.2, 0.1]",
-            "Move the red cube to the right of the blue square",
-            "Arrange objects in a triangle pattern",
-        ]
 
     async def suggest_tasks(self):
         """
