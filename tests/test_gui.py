@@ -185,6 +185,9 @@ class TestGradioInterface:
     def test_create_interface(self):
         """Test Gradio interface creation."""
         gui = MagicMock(spec=RobotMCPGUI)
+        # Ensure default_examples is present on the mock,
+        # specifically for CI where spec might not catch it if it's not a class attribute
+        gui.default_examples = ["Example 1", "Example 2", "Example 3", "Example 4"]
         gui.get_status_html.return_value = "<div>Status</div>"
 
         with patch("robot_gui.mcp_app.gr.Blocks") as mock_blocks, patch("robot_gui.mcp_app.gr.Row"), patch(
