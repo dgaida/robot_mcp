@@ -176,8 +176,10 @@ class RobotMCPGUI:
                 {"role": "user", "content": prompt},
             ]
 
-            # LLMClient.chat_completion is synchronous, so we run it in a thread to avoid blocking the event loop
-            response = await asyncio.to_thread(self.mcp_client.llm_client.chat_completion, messages)
+            # LLMClient.chat_completion is synchronous, so we run it in a thread to avoid blocking the event loop.
+            # We use a compatible way for Python 3.8+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, lambda: self.mcp_client.llm_client.chat_completion(messages))
 
             # 5. Parse response
             json_match = re.search(r"\[.*\]", response, re.DOTALL)

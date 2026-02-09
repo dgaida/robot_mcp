@@ -147,6 +147,37 @@ class TestRobotMCPGUI:
         assert "Simulation" in html
         assert gui.robot_id.upper() in html
 
+    @pytest.mark.asyncio
+    async def test_suggest_tasks_success(self, gui, mock_dependencies):
+        """Test successful task suggestions."""
+        gui.mcp_connected = True
+        mock_client = AsyncMock()
+        mock_client.call_tool = AsyncMock(return_value='{"objects": []}')
+        tool1 = MagicMock()
+        tool1.name = "tool1"
+        tool1.description = "desc1"
+        mock_client.available_tools = [tool1]
+
+        # Mock LLM client
+        mock_llm = MagicMock()
+        mock_llm.chat_completion.return_value = '["Task 1", "Task 2", "Task 3", "Task 4"]'
+        mock_client.llm_client = mock_llm
+
+        gui.mcp_client = mock_client
+
+        suggestions = await gui.suggest_tasks()
+
+        assert len(suggestions) == 4
+        assert suggestions[0] == "Task 1"
+        mock_client.call_tool.assert_called_once_with("get_detected_objects", {})
+
+    @pytest.mark.asyncio
+    async def test_suggest_tasks_not_connected(self, gui):
+        """Test task suggestions when not connected."""
+        gui.mcp_connected = False
+        suggestions = await gui.suggest_tasks()
+        assert suggestions == gui.default_examples
+
 
 class TestGradioInterface:
     """Test Gradio interface creation."""
