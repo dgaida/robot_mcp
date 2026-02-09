@@ -13,6 +13,8 @@ Compatible with Gradio 3.x, 4.x, 5.x, and 6.x
 """
 
 import asyncio
+import json
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -54,6 +56,14 @@ except ImportError:
 
 class RobotMCPGUI:
     """Enhanced GUI with Redis visualization and multi-LLM support."""
+
+    # Default example tasks
+    default_examples = [
+        "What objects do you see?",
+        "Pick up the pencil and place it at [0.2, 0.1]",
+        "Move the red cube to the right of the blue square",
+        "Arrange objects in a triangle pattern",
+    ]
 
     def __init__(
         self,
@@ -114,6 +124,85 @@ class RobotMCPGUI:
         # Current frame
         self.current_frame = None
         self.frame_lock = asyncio.Lock()
+
+    async def suggest_tasks(self):
+        """
+        Generate example task suggestions based on detected objects and available tools.
+
+        Returns:
+            list: List of 4 suggested tasks
+        """
+        if not self.mcp_connected or not self.mcp_client:
+            print("⚠️ MCP client not connected, returning default examples")
+            return self.default_examples
+
+        try:
+            print("🔍 Fetching detected objects and skills for suggestions...")
+
+            # 1. Get detected objects using the tool
+            objects_json = await self.mcp_client.call_tool("get_detected_objects", {})
+
+            # 2. Get available tools as skills
+            skills = []
+            for tool in self.mcp_client.available_tools:
+                skills.append(f"- {tool.name}: {tool.description}")
+            skills_str = "\n".join(skills)
+
+            # 3. Prepare prompt for LLM
+            prompt = f"""
+            You are a robot task suggestion assistant. Based on the detected objects and the robot's available skills,
+            suggest 4 diverse, interesting, and realistic example tasks that a user could ask the robot to perform.
+
+            DETECTED OBJECTS (JSON):
+            {objects_json}
+
+            AVAILABLE ROBOT SKILLS:
+            {skills_str}
+
+            INSTRUCTIONS:
+            - Suggest exactly 4 tasks.
+            - Each task should be a single, concise sentence.
+            - Tasks should be diverse (e.g., one about detection, one about moving, one about arranging, etc.).
+            - Tasks MUST be performable using the available skills and objects.
+            - Return ONLY a JSON list of strings.
+
+            Example output:
+            ["What is the largest object you can see?", "Move the blue cube to the left of the red one", "Pick up the pen and place it at [0.2, 0.0]", "Arrange all cubes in a line"]
+            """
+
+            # 4. Call LLM
+            messages = [
+                {"role": "system", "content": "You are a helpful robot assistant. You only output JSON."},
+                {"role": "user", "content": prompt},
+            ]
+
+            # LLMClient.chat_completion is synchronous, so we run it in a thread to avoid blocking the event loop.
+            # We use a compatible way for Python 3.8+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, lambda: self.mcp_client.llm_client.chat_completion(messages))
+
+            # 5. Parse response
+            json_match = re.search(r"\[.*\]", response, re.DOTALL)
+            if json_match:
+                try:
+                    suggestions = json.loads(json_match.group(0))
+                    if isinstance(suggestions, list) and len(suggestions) >= 1:
+                        # Ensure we have exactly 4
+                        if len(suggestions) > 4:
+                            suggestions = suggestions[:4]
+                        while len(suggestions) < 4:
+                            suggestions.append(self.default_examples[len(suggestions)])
+                        return suggestions
+                except json.JSONDecodeError:
+                    print(f"⚠️ Failed to parse JSON from: {json_match.group(0)}")
+
+            print(f"⚠️ Failed to find JSON list in LLM response: {response}")
+
+        except Exception as e:
+            print(f"❌ Error generating suggestions: {e}")
+
+        # Fallback to defaults
+        return self.default_examples
 
     def _init_speech2text(self):
         """Initialize speech-to-text system."""
@@ -308,6 +397,9 @@ def create_gradio_interface(gui: RobotMCPGUI):
         gr.Markdown("# 🤖 Robot Control System")
         gr.Markdown("Natural language control with live object detection visualization")
 
+        # Example tasks state
+        examples_state = gr.State(gui.default_examples)
+
         # Connection status
         with gr.Row():
             status_display = gr.HTML(value=gui.get_status_html(), elem_classes=["status-box"])
@@ -330,20 +422,18 @@ def create_gradio_interface(gui: RobotMCPGUI):
                     voice_btn = gr.Button("🎤 Record Voice", scale=1, variant="secondary")
 
                 with gr.Row():
-                    submit_btn = gr.Button("Send", variant="primary", scale=3)
-                    clear_btn = gr.Button("Clear Chat", scale=1)
+                    submit_btn = gr.Button("Send", variant="primary", scale=2)
+                    suggest_btn = gr.Button("✨ Suggest Tasks", variant="secondary", scale=1)
+                    clear_btn = gr.Button("Clear Chat", variant="stop", scale=1)
 
-                # Example tasks
-                gr.Examples(
-                    examples=[
-                        "What objects do you see?",
-                        "Pick up the pencil and place it at [0.2, 0.1]",
-                        "Move the red cube to the right of the blue square",
-                        "Arrange objects in a triangle pattern",
-                    ],
-                    inputs=msg_input,
-                    label="Example Tasks",
-                )
+                # Example tasks (dynamically rendered)
+                @gr.render(inputs=examples_state)
+                def render_examples(examples_list):
+                    gr.Examples(
+                        examples=examples_list,
+                        inputs=msg_input,
+                        label="Example Tasks",
+                    )
 
             # Right: Live camera feed
             with gr.Column(scale=1):
@@ -365,6 +455,9 @@ def create_gradio_interface(gui: RobotMCPGUI):
             gui.chat_history = []
             return []
 
+        async def handle_suggest():
+            return await gui.suggest_tasks()
+
         def update_camera():
             return gui.get_latest_frame()
 
@@ -378,6 +471,8 @@ def create_gradio_interface(gui: RobotMCPGUI):
         voice_btn.click(fn=handle_voice, outputs=[msg_input])
 
         clear_btn.click(fn=handle_clear, outputs=[chatbot])
+
+        suggest_btn.click(fn=handle_suggest, outputs=[examples_state])
 
         # Auto-refresh camera feed
         timer = gr.Timer(0.1)
