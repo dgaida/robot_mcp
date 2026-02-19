@@ -5,12 +5,53 @@ Pytest configuration and shared fixtures
 
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
-import pytest
+# ============================================================================
+# WORKAROUNDS FOR BROKEN EXTERNAL DEPENDENCIES
+# ============================================================================
+
+# 1. Fix text2speech broken structure (missing engines module)
+# This MUST be done before anything imports text2speech or robot_environment
+engines_mock = MagicMock()
+engines_mock.TTSEngine = MagicMock()
+engines_mock.KokoroEngine = MagicMock()
+engines_mock.ElevenLabsEngine = MagicMock()
+sys.modules["text2speech.engines"] = engines_mock
+
+try:
+    import text2speech  # noqa: F401
+except ImportError:
+    # If text2speech is missing, mock it entirely
+    t2s_mock = MagicMock()
+    sys.modules["text2speech"] = t2s_mock
+
+# 2. Fix robot_workspace missing Workspaces export (breaks robot_environment)
+try:
+    # Try to get the actual Workspaces class
+    try:
+        from robot_workspace.workspaces.workspaces import Workspaces
+    except ImportError:
+        Workspaces = MagicMock()
+
+    # Ensure robot_workspace module exists in sys.modules
+    import robot_workspace
+
+    # Inject Workspaces into the module
+    robot_workspace.Workspaces = Workspaces
+    sys.modules["robot_workspace"].Workspaces = Workspaces
+except ImportError:
+    # If robot_workspace is missing, mock it
+    rw_mock = MagicMock()
+    rw_mock.Workspaces = MagicMock()
+    rw_mock.Location = MagicMock()
+    sys.modules["robot_workspace"] = rw_mock
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+import pytest  # noqa: E402
 
 
 @pytest.fixture(scope="session")
