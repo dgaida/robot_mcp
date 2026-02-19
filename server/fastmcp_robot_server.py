@@ -176,21 +176,19 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 @mcp.tool
 @log_tool_call
 def get_largest_free_space_with_center() -> str:
-    """
-    Determines the largest free space in the workspace in square metres and its center coordinate in metres.
+    """Determines the largest free space in the workspace.
+
+    Calculates the area in square metres and its center coordinate in metres.
     This method can be used to determine at which location an object can be placed safely.
 
-    Example call:
-    To pick a 'chocolate bar' and place it at the center of the largest free space of the workspace, call:
-
-    largest_free_area_m2, center_x, center_y = agent.get_largest_free_space_with_center()
-
-    robot.pick_place_object(
-        object_name='chocolate bar',
-        pick_coordinate=[-0.1, 0.01],
-        place_coordinate=[center_x, center_y],
-        location=Location.RIGHT_NEXT_TO
-    )
+    Examples:
+        >>> # To pick a 'chocolate bar' and place it at the center of the largest free space:
+        >>> area, cx, cy = agent.get_largest_free_space_with_center()
+        >>> robot.pick_place_object(
+        ...     object_name='chocolate bar',
+        ...     pick_coordinate=[-0.1, 0.01],
+        ...     place_coordinate=[cx, cy]
+        ... )
 
     Returns:
         str: Description of the largest free space with area and center coordinates.
@@ -212,11 +210,11 @@ def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> str:
     Args:
         workspace_id (str): ID of workspace.
         point (str): description of point. Possible values are:
-        - 'upper left corner': Returns the world coordinate of the upper left corner of the workspace.
-        - 'upper right corner': Returns the world coordinate of the upper right corner of the workspace.
-        - 'lower left corner': Returns the world coordinate of the lower left corner of the workspace.
-        - 'lower right corner': Returns the world coordinate of the lower right corner of the workspace.
-        - 'center point': Returns the world coordinate of the center of the workspace.
+            * 'upper left corner': Returns the world coordinate of the upper left corner of the workspace.
+            * 'upper right corner': Returns the world coordinate of the upper right corner of the workspace.
+            * 'lower left corner': Returns the world coordinate of the lower left corner of the workspace.
+            * 'lower right corner': Returns the world coordinate of the lower right corner of the workspace.
+            * 'center point': Returns the world coordinate of the center of the workspace.
 
     Returns:
         str: (x,y) world coordinate of the point on the workspace that was specified by the argument point.
@@ -234,12 +232,13 @@ def get_workspace_coordinate_from_point(workspace_id: str, point: str) -> str:
 @mcp.tool
 @log_tool_call
 def get_object_labels_as_string() -> str:
-    """
-    Returns all object labels that the object detection model is able to detect as a comma separated string.
-    Call this method if the user wants to know which objects the robot can pick or is able to detect.
+    """Returns all detectable object labels as a comma separated string.
+
+    Call this method if the user wants to know which objects the robot
+    can pick or is able to detect.
 
     Returns:
-        str: Comma-separated list of detectable objects. "chocolate bar, blue box, cigarette, ..."
+        str: Comma-separated list of detectable objects (e.g., "chocolate bar, blue box, ...").
     """
     try:
         labels = env.get_object_labels_as_string()
@@ -626,14 +625,14 @@ def get_detected_objects(
 
     Args:
         location (Location, optional): acts as filter. can have the values:
-        - "left next to": Only objects left of the given coordinate are returned,
-        - "right next to": Only objects right of the given coordinate are returned,
-        - "above": Only objects above the given coordinate are returned,
-        - "below": Only objects below the given coordinate are returned,
-        - "close to": Only objects close to the given coordinate are returned (within 2 centimeters),
-        - None: no filter, all objects are returned (default).
+            * "left next to": Only objects left of the given coordinate are returned,
+            * "right next to": Only objects right of the given coordinate are returned,
+            * "above": Only objects above the given coordinate are returned,
+            * "below": Only objects below the given coordinate are returned,
+            * "close to": Only objects close to the given coordinate are returned (within 2 centimeters),
+            * None: no filter, all objects are returned (default).
         coordinate (List[float], optional): some (x,y) coordinate in the world coordinate system.
-        Together with 'location' it acts as a filter. Required if 'location' is specified.
+            Together with 'location' it acts as a filter. Required if 'location' is specified.
         label (str, optional): Only objects with the given label are returned.
 
     Returns:
