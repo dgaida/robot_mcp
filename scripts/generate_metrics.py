@@ -1,7 +1,8 @@
-import subprocess
 import os
 import re
+import subprocess
 from datetime import datetime
+
 
 def run_command(command):
     try:
