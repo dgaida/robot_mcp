@@ -11,6 +11,7 @@ def run_command(command):
     except Exception as e:
         return "", str(e), 1
 
+
 def get_interrogate_coverage():
     stdout, stderr, code = run_command("interrogate .")
     # Search for TOTAL ... Cover%
@@ -25,6 +26,7 @@ def get_interrogate_coverage():
 
     return "0.0"
 
+
 def get_ruff_status():
     stdout, stderr, code = run_command("ruff check .")
     if code == 0:
@@ -32,8 +34,9 @@ def get_ruff_status():
     # Count lines that look like errors
     error_count = len([line for line in stdout.splitlines() if ":" in line and ".py" in line])
     if error_count == 0 and code != 0:
-         return "❌ Failed"
+        return "❌ Failed"
     return f"❌ {error_count} issues"
+
 
 def get_pytest_coverage():
     # Run pytest with a timeout or just skip if it takes too long
@@ -42,6 +45,7 @@ def get_pytest_coverage():
     if match:
         return match.group(1)
     return "0.0"
+
 
 def generate_dashboard():
     api_cov = get_interrogate_coverage()
@@ -93,10 +97,14 @@ These metrics are automatically updated on every push to the main branch.
     german_markdown = german_markdown.replace("Test Coverage", "Testabdeckung")
     german_markdown = german_markdown.replace("Detailed Reports", "Detaillierte Berichte")
     german_markdown = german_markdown.replace("CI Integration", "CI-Integration")
-    german_markdown = german_markdown.replace("These metrics are automatically updated on every push to the main branch.", "Diese Metriken werden bei jedem Push in den Main-Branch automatisch aktualisiert.")
+    german_markdown = german_markdown.replace(
+        "These metrics are automatically updated on every push to the main branch.",
+        "Diese Metriken werden bei jedem Push in den Main-Branch automatisch aktualisiert.",
+    )
 
     with open("docs/de/development/metrics.md", "w") as f:
         f.write(german_markdown)
+
 
 if __name__ == "__main__":
     generate_dashboard()
