@@ -19,10 +19,16 @@ from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
 
-from .schemas import (
-    GetDetectedObjectsInput,
-    PickPlaceInput,
-)
+try:
+    from .schemas import (
+        GetDetectedObjectsInput,
+        PickPlaceInput,
+    )
+except (ImportError, ValueError):
+    from schemas import (
+        GetDetectedObjectsInput,
+        PickPlaceInput,
+    )
 
 # Import LLM client for explanations
 try:
