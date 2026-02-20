@@ -3,6 +3,7 @@ import argparse
 import functools
 import logging
 import os
+import redis
 import time
 from datetime import datetime
 from typing import List, Optional, Union
@@ -875,6 +876,15 @@ def main():
     logger.info(f"  Verbose:      {args.verbose}")
     logger.info(f"  Log File:     {log_filename}")
     logger.info("=" * 80)
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r = redis.Redis(host=args.host, port=6379, decode_responses=True)
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Print to console (since logging is file-only)
     print("=" * 60)

@@ -10,6 +10,7 @@ import argparse
 import functools
 import logging
 import os
+import redis
 import time
 from datetime import datetime
 from typing import List, Optional, Union
@@ -523,6 +524,15 @@ def main():
     parser.add_argument("--no-explanations", action="store_true", help="Disable LLM-generated explanations")
 
     args = parser.parse_args()
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r = redis.Redis(host=args.host, port=6379, decode_responses=True)
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Log startup configuration
     logger.info("=" * 80)

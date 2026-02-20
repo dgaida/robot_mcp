@@ -17,6 +17,7 @@ import asyncio
 import json
 import logging
 import os
+import redis
 from datetime import datetime
 from typing import Any, Dict, List, Literal
 
@@ -764,6 +765,8 @@ Supported Providers:
     parser.add_argument("--temperature", type=float, default=0.7, help="Sampling temperature (default: 0.7)")
     parser.add_argument("--max-tokens", type=int, default=4096, help="Maximum tokens (default: 4096)")
     parser.add_argument("--command", help="Single command to execute (non-interactive)")
+    parser.add_argument("--redis-host", type=str, default="localhost", help="Redis server host")
+    parser.add_argument("--redis-port", type=int, default=6379, help="Redis server port")
 
     args = parser.parse_args()
 
@@ -771,6 +774,15 @@ Supported Providers:
     logger.info("MAIN ENTRY POINT")
     logger.info(f"  Arguments: {vars(args)}")
     logger.info("=" * 80)
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r = redis.Redis(host=args.redis_host, port=args.redis_port, decode_responses=True)
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Create client
     client = RobotUniversalMCPClient(
