@@ -12,14 +12,24 @@ from pydantic import ValidationError
 from robot_environment import Environment
 from robot_workspace import Location
 
-from .schemas import (
-    GetDetectedObjectsInput,
-    PickObjectInput,
-    PickPlaceInput,
-    PlaceObjectInput,
-    PushObjectInput,
-    WorkspacePointInput,
-)
+try:
+    from .schemas import (
+        GetDetectedObjectsInput,
+        PickObjectInput,
+        PickPlaceInput,
+        PlaceObjectInput,
+        PushObjectInput,
+        WorkspacePointInput,
+    )
+except (ImportError, ValueError):
+    from schemas import (
+        GetDetectedObjectsInput,
+        PickObjectInput,
+        PickPlaceInput,
+        PlaceObjectInput,
+        PushObjectInput,
+        WorkspacePointInput,
+    )
 
 # ============================================================================
 # VALIDATION DECORATOR
