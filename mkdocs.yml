@@ -1,4 +1,4 @@
-site_name: Robot MCP Documentation
+site_name: Robot MCP Control System
 site_description: Natural language robot control using FastMCP with multi-LLM support
 site_author: Daniel Gaida
 site_url: https://dgaida.github.io/robot_mcp/
@@ -9,8 +9,8 @@ edit_uri: edit/master/docs/
 
 theme:
   name: material
+  language: de
   palette:
-    # Light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: indigo
@@ -18,7 +18,6 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: indigo
@@ -31,21 +30,55 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.indexes
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.code.annotate
+    - navigation.tracking
+    - alternate.style
 
 plugins:
   - search
-  - autorefs
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      languages:
+        - code: de
+          name: Deutsch
+          locale: de
+          default: true
+          build: true
+        - code: en
+          name: English
+          locale: en
+          build: true
+      default_language: de
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+  - mermaid2:
+      arguments:
+        theme: material
+  - mike:
+      alias_type: symlink
 
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid
   - pymdownx.tabbed:
       alternate_style: true
   - admonition
@@ -62,15 +95,19 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
-      - Installation: INSTALLATION.md
-      - Quick Start: mcp_setup_guide.md
-  - Documentation:
-      - API Reference: api.md
-      - Examples: examples.md
+      - Installation: installation.md
+      - Quick Start: getting-started.md
+  - Configuration: configuration.md
+  - Usage: examples.md
+  - API Reference: api/index.md
+  - Architecture: architecture/index.md
+  - Development:
+      - Overview: development/index.md
+      - Docstring Style: development/docstring_style.md
+      - Releasing: development/releasing.md
+      - Metrics: development/metrics.md
   - Troubleshooting: troubleshooting.md
-  - API Reference:
-      - Auto-generated: api_reference_auto.md
-      - Manual: mcp_api_reference.md
+  - Changelog: CHANGELOG.md
 
 extra:
   social:
