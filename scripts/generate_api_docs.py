@@ -699,9 +699,9 @@ class DocumentationValidator:
             # Check example quality
             for i, example in enumerate(tool.examples):
                 if not example.strip():
-                    self.warnings.append(f"{tool.name}: Example {i+1} is empty")
+                    self.warnings.append(f"{tool.name}: Example {i + 1} is empty")
                 elif len(example) < 10:
-                    self.warnings.append(f"{tool.name}: Example {i+1} is too short")
+                    self.warnings.append(f"{tool.name}: Example {i + 1} is too short")
 
     def _check_consistency(self):
         """Check consistency across documentation."""
@@ -744,7 +744,7 @@ class DocumentationValidator:
         complete = sum(1 for t in self.tools if t.description and t.examples)
         print("\n📊 Summary:")
         print(f"  Total tools: {total}")
-        print(f"  Fully documented: {complete} ({complete/total*100:.1f}%)")
+        print(f"  Fully documented: {complete} ({complete / total * 100:.1f}%)")
         print(f"  Issues: {len(self.issues)}")
         print(f"  Warnings: {len(self.warnings)}")
 

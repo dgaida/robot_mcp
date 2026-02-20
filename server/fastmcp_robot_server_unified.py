@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
 
+import redis
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from pydantic import ValidationError
@@ -76,7 +77,7 @@ except ImportError:
 # ============================================================================
 
 os.makedirs("log", exist_ok=True)
-log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1454,6 +1455,19 @@ def main():
         camera = not args.no_camera
         host = args.host
         port = args.port
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r = redis.Redis(
+            host=args.host if hasattr(args, "host") else "localhost",
+            port=6379,  # Default port as it's not always in args
+            decode_responses=True,
+        )
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Print startup info
     print("=" * 60)

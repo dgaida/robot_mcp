@@ -171,7 +171,6 @@ class TestGradioInterface:
         ), patch(
             "robot_gui.mcp_app.gr.Timer"
         ):
-
             mock_demo = MagicMock()
             mock_blocks.return_value.__enter__.return_value = mock_demo
 

@@ -28,6 +28,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Union
 
+import redis
+
 # Add parent directory to path to import config
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -413,6 +415,17 @@ def main():
         if key != "environments":  # Skip environment overrides in log
             logger.info(f"{key}: {value}")
     logger.info("=" * 80)
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r_host = config.redis.host if config else "localhost"
+        r_port = config.redis.port if config else 6379
+        r = redis.Redis(host=r_host, port=r_port, decode_responses=True)
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Print startup info
     print_startup_info(config)

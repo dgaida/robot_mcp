@@ -343,7 +343,7 @@ class ConfigManager:
                     break
             else:
                 raise FileNotFoundError(
-                    "Could not find robot_config.yaml. " "Please create config/robot_config.yaml or specify config_path"
+                    "Could not find robot_config.yaml. Please create config/robot_config.yaml or specify config_path"
                 )
 
         # Load YAML

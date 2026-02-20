@@ -20,6 +20,7 @@ from typing import Optional
 import cv2
 import gradio as gr
 import numpy as np
+import redis
 import torch
 from dotenv import load_dotenv
 
@@ -96,6 +97,15 @@ class RobotMCPGUI:
 
         # Initialize Redis streamers
         try:
+            # Clear Redis streams to avoid showing old frames
+            try:
+                r = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+                streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+                r.delete(*streams)
+                print(f"✓ Cleared Redis streams: {', '.join(streams)}")
+            except Exception as re:
+                print(f"⚠️ Could not clear Redis streams: {re}")
+
             self.image_streamer = RedisImageStreamer(host=redis_host, port=redis_port, stream_name="annotated_camera")
             self.text_manager = RedisTextOverlayManager(host=redis_host, port=redis_port)
             print("✓ Redis connections established")

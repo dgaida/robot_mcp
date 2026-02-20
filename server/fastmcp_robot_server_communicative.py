@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 from typing import List, Optional, Union
 
+import redis
 from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
@@ -44,7 +45,7 @@ except ImportError:
 # ============================================================================
 
 os.makedirs("log", exist_ok=True)
-log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -112,7 +113,10 @@ class ExplanationGenerator:
 
         try:
             self.llm_client = LLMClient(
-                api_choice=api_choice, llm=model, temperature=0.7, max_tokens=150  # Keep explanations concise
+                api_choice=api_choice,
+                llm=model,
+                temperature=0.7,
+                max_tokens=150,  # Keep explanations concise
             )
             logger.info(f"Explanation generator initialized: {api_choice} - {self.llm_client.llm}")
         except Exception as e:
@@ -523,6 +527,15 @@ def main():
     parser.add_argument("--no-explanations", action="store_true", help="Disable LLM-generated explanations")
 
     args = parser.parse_args()
+
+    # Clear Redis streams to avoid showing old data
+    try:
+        r = redis.Redis(host=args.host, port=6379, decode_responses=True)
+        streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
+        r.delete(*streams)
+        logger.info(f"Cleared Redis streams: {', '.join(streams)}")
+    except Exception as e:
+        logger.warning(f"Could not clear Redis streams: {e}")
 
     # Log startup configuration
     logger.info("=" * 80)

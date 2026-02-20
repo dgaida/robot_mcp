@@ -30,7 +30,7 @@ from robot_environment import Environment  # , Objects
 from robot_environment.robot.robot_api import Location
 
 # Configure logging to file (NOT to stdout/stderr!)
-log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -344,16 +344,14 @@ class RobotMCPServer:
             Tool(
                 name="get_largest_object",
                 description=(
-                    "Find the largest object in the workspace by area. "
-                    "Returns the object and its size in square centimeters."
+                    "Find the largest object in the workspace by area. Returns the object and its size in square centimeters."
                 ),
                 inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
                 name="get_smallest_object",
                 description=(
-                    "Find the smallest object in the workspace by area. "
-                    "Returns the object and its size in square centimeters."
+                    "Find the smallest object in the workspace by area. Returns the object and its size in square centimeters."
                 ),
                 inputSchema={"type": "object", "properties": {}},
             ),

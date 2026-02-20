@@ -163,10 +163,8 @@ class RobotExamplesBase:
     async def conditional_logic(self):
         """Use conditional logic in commands."""
         commands = [
-            "If there's a pencil in the workspace, move it to [0.2, 0.0]. " "If not, tell me what objects are available.",
-            "Check if there are more than 3 objects. "
-            "If yes, arrange them in a square pattern. "
-            "If no, arrange them in a line.",
+            "If there's a pencil in the workspace, move it to [0.2, 0.0]. If not, tell me what objects are available.",
+            "Check if there are more than 3 objects. If yes, arrange them in a square pattern. If no, arrange them in a line.",
             "Find the object nearest to [0.15, 0.0]. "
             "If it's within 5cm, move it to [0.25, 0.0]. "
             "Otherwise, just report its position.",

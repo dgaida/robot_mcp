@@ -225,7 +225,7 @@ class TestServerClientCommunication:
             mock_robot.pick_place_object.return_value = True
 
             # Valid call
-            result = pick_place_object.fn(
+            result = pick_place_object(
                 object_name="pencil",
                 pick_coordinate=[0.15, -0.05],
                 place_coordinate=[0.20, 0.10],
