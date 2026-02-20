@@ -682,7 +682,7 @@ quit    - Exit interactive mode
 ## Getting Help
 
 **Resources:**
-- [API Reference & Architecture](mcp_api_reference.md) - Complete API documentation
+- [API Reference & Architecture](api/index.md) - Complete API documentation
 - [GitHub Issues](https://github.com/dgaida/robot_mcp/issues) - Report bugs
 - [Example Scripts](../examples/) - See working examples
 - **MCP Documentation**: https://modelcontextprotocol.io

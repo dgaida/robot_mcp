@@ -695,6 +695,6 @@ python examples/universal_examples.py compare_providers
 ---
 
 For more information:
-- [API Reference](api.md) - Complete tool documentation
-- [Setup Guide](mcp_setup_guide.md) - Installation and configuration
+- [API Reference](api/index.md) - Complete tool documentation
+- [Setup Guide](getting-started.md) - Installation and configuration
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions

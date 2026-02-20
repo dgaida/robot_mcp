@@ -696,10 +696,10 @@ pkill -f redis-server
 After successful installation:
 
 1. **Configure API Keys**: Complete `secrets.env` with at least one API key
-2. **Quick Start**: See `docs/mcp_setup_guide.md` for usage examples
+2. **Quick Start**: See `docs/getting-started.md` for usage examples
 3. **Examples**: Try `python examples/universal_examples.py workspace_scan`
 4. **GUI**: Launch `python robot_gui/mcp_app.py --robot niryo`
-5. **Documentation**: Read `README.md` for system overview
+5. **Documentation**: Read `index.md` for system overview
 
 ## 🎯 Recommended Setup for Beginners
 
@@ -764,4 +764,4 @@ Use this checklist to verify complete installation:
 
 ---
 
-**Installation complete? → Start with `docs/mcp_setup_guide.md`! 🚀**
+**Installation complete? → Start with `docs/getting-started.md`! 🚀**

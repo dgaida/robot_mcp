@@ -68,6 +68,6 @@ graph LR
 
 ## Unterstützung
 
-- 📖 [Dokumentation](README.md)
+- 📖 [Dokumentation](index.md)
 - 🐛 [Probleme melden](https://github.com/dgaida/robot_mcp/issues)
 - 💬 [Diskussionen](https://github.com/dgaida/robot_mcp/discussions)
