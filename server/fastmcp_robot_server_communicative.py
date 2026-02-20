@@ -10,11 +10,11 @@ import argparse
 import functools
 import logging
 import os
-import redis
 import time
 from datetime import datetime
 from typing import List, Optional, Union
 
+import redis
 from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
@@ -45,7 +45,7 @@ except ImportError:
 # ============================================================================
 
 os.makedirs("log", exist_ok=True)
-log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -113,7 +113,10 @@ class ExplanationGenerator:
 
         try:
             self.llm_client = LLMClient(
-                api_choice=api_choice, llm=model, temperature=0.7, max_tokens=150  # Keep explanations concise
+                api_choice=api_choice,
+                llm=model,
+                temperature=0.7,
+                max_tokens=150,  # Keep explanations concise
             )
             logger.info(f"Explanation generator initialized: {api_choice} - {self.llm_client.llm}")
         except Exception as e:

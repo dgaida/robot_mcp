@@ -3,11 +3,11 @@ import argparse
 import functools
 import logging
 import os
-import redis
 import time
 from datetime import datetime
 from typing import List, Optional, Union
 
+import redis
 from fastmcp import FastMCP
 from pydantic import ValidationError
 from robot_environment import Environment
@@ -78,7 +78,7 @@ def validate_input(model_class):
 os.makedirs("log", exist_ok=True)
 
 # Single log file for entire system
-log_filename = os.path.join("log", f'mcp_server_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
 # Configure root logger - this ensures ALL loggers use the same file
 logging.basicConfig(
@@ -442,7 +442,7 @@ def move2by(
             z_offset_str = f" (z_offset: {z_offset:.3f}m)" if z_offset != 0.001 else ""
             return (
                 f"✓ Successfully picked '{object_name}' from [{pick_coordinate[0]:.3f}, {pick_coordinate[1]:.3f}]{z_offset_str} "
-                f"and placed it {distance*100:.1f} centimeters {direction}wards at [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
+                f"and placed it {distance * 100:.1f} centimeters {direction}wards at [{place_coordinate[0]:.3f}, {place_coordinate[1]:.3f}]"
             )
         else:
             return f"❌ Failed to pick and move '{object_name}'"

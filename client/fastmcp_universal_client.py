@@ -17,10 +17,10 @@ import asyncio
 import json
 import logging
 import os
-import redis
 from datetime import datetime
 from typing import Any, Dict, List, Literal
 
+import redis
 from dotenv import load_dotenv
 from fastmcp import Client
 from fastmcp.client.transports import SSETransport
@@ -34,7 +34,7 @@ from llm_client import LLMClient
 os.makedirs("log", exist_ok=True)
 
 # Unique log file for this client session
-log_filename = os.path.join("log", f'mcp_client_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join("log", f"mcp_client_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
 # Configure logging - file only (no console to keep UI clean)
 # Use UTF-8 encoding to handle emojis on Windows

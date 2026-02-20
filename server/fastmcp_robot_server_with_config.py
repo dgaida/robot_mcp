@@ -23,11 +23,12 @@ import argparse
 import functools
 import logging
 import os
-import redis
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union
+
+import redis
 
 # Add parent directory to path to import config
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -417,7 +418,7 @@ def main():
 
     # Clear Redis streams to avoid showing old data
     try:
-        r_host = config.redis.host if config else 'localhost'
+        r_host = config.redis.host if config else "localhost"
         r_port = config.redis.port if config else 6379
         r = redis.Redis(host=r_host, port=r_port, decode_responses=True)
         streams = ["annotated_camera", "annotated_frames", "detected_objects", "robot_camera", "detectable_labels"]
