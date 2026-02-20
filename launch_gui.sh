@@ -5,6 +5,12 @@
 
 set -e
 
+# Initialize conda for bash (important when running from .sh)
+eval "$(conda shell.bash hook)"
+
+# Activate the environment
+conda activate llm_niryo_cu12
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -14,7 +20,7 @@ NC='\033[0m' # No Color
 
 # Default values
 ROBOT="niryo"
-SIMULATION=true
+SIMULATION=false
 MODEL="moonshotai/kimi-k2-instruct-0905"
 SHARE=false
 
