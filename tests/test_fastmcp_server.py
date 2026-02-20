@@ -61,8 +61,8 @@ class TestRobotTools:
         """Test pick and place object."""
         self.mock_robot.pick_place_object.return_value = True
 
-        # Access the underlying function via .fn attribute
-        pick_place_func = server_module.pick_place_object.fn
+        # Access the underlying function via  attribute
+        pick_place_func = server_module.pick_place_object
         result = pick_place_func(
             object_name="pencil", pick_coordinate=[0.15, -0.05], place_coordinate=[0.20, 0.10], location="right next to"
         )
@@ -80,7 +80,7 @@ class TestRobotTools:
         """Test pick and place with Location enum."""
         self.mock_robot.pick_place_object.return_value = True
 
-        pick_place_func = server_module.pick_place_object.fn
+        pick_place_func = server_module.pick_place_object
         result = pick_place_func(
             object_name="cube", pick_coordinate=[0.2, 0.0], place_coordinate=[0.25, 0.05], location=Location.LEFT_NEXT_TO
         )
@@ -92,7 +92,7 @@ class TestRobotTools:
         """Test pick object."""
         self.mock_robot.pick_object.return_value = True
 
-        pick_func = server_module.pick_object.fn
+        pick_func = server_module.pick_object
         result = pick_func(object_name="pen", pick_coordinate=[0.18, -0.03])
 
         assert "Successfully picked" in result
@@ -102,7 +102,7 @@ class TestRobotTools:
         """Test place object."""
         self.mock_robot.place_object.return_value = True
 
-        place_func = server_module.place_object.fn
+        place_func = server_module.place_object
         result = place_func(place_coordinate=[0.20, 0.05], location="left next to")
 
         assert "Successfully placed" in result
@@ -112,7 +112,7 @@ class TestRobotTools:
         """Test push object."""
         self.mock_robot.push_object.return_value = True
 
-        push_func = server_module.push_object.fn
+        push_func = server_module.push_object
         result = push_func(object_name="large_box", push_coordinate=[0.25, 0.05], direction="right", distance=50.0)
 
         assert "Successfully pushed" in result
@@ -159,7 +159,7 @@ class TestObjectDetectionTools:
         ]
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_objects_func = server_module.get_detected_objects.fn
+        get_objects_func = server_module.get_detected_objects
         result = get_objects_func()
 
         assert "Found 2 object(s)" in result
@@ -171,7 +171,7 @@ class TestObjectDetectionTools:
         mock_objects.get_detected_objects_serializable.return_value = [{"label": "pencil", "x": 0.15, "y": -0.05}]
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_objects_func = server_module.get_detected_objects.fn
+        get_objects_func = server_module.get_detected_objects
         result = get_objects_func(label="pencil")
 
         assert "Found 1 object(s)" in result
@@ -183,7 +183,7 @@ class TestObjectDetectionTools:
         mock_objects.get_detected_objects_serializable.return_value = [{"label": "cube", "x": 0.20, "y": 0.10}]
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_objects_func = server_module.get_detected_objects.fn
+        get_objects_func = server_module.get_detected_objects
         result = get_objects_func(location="left next to", coordinate=[0.15, 0.0])
 
         assert "Found 1 object(s)" in result
@@ -195,7 +195,7 @@ class TestObjectDetectionTools:
         mock_objects.get_detected_object.return_value = {"label": "pencil", "x": 0.15, "y": -0.05}
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_object_func = server_module.get_detected_object.fn
+        get_object_func = server_module.get_detected_object
         result = get_object_func([0.15, -0.05])
 
         assert "Found object" in result
@@ -207,7 +207,7 @@ class TestObjectDetectionTools:
         mock_objects.get_detected_object.return_value = None
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_object_func = server_module.get_detected_object.fn
+        get_object_func = server_module.get_detected_object
         result = get_object_func([0.99, 0.99])
 
         assert "No object found" in result
@@ -218,7 +218,7 @@ class TestObjectDetectionTools:
         mock_objects.get_largest_detected_object.return_value = ({"label": "cube", "x": 0.20, "y": 0.10}, 0.0025)
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_largest_func = server_module.get_largest_detected_object.fn
+        get_largest_func = server_module.get_largest_detected_object
         result = get_largest_func()
 
         assert "Largest object" in result
@@ -230,7 +230,7 @@ class TestObjectDetectionTools:
         mock_objects.get_smallest_detected_object.return_value = ({"label": "pencil", "x": 0.15, "y": -0.05}, 0.0018)
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_smallest_func = server_module.get_smallest_detected_object.fn
+        get_smallest_func = server_module.get_smallest_detected_object
         result = get_smallest_func()
 
         assert "Smallest object" in result
@@ -245,7 +245,7 @@ class TestObjectDetectionTools:
         ]
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_sorted_func = server_module.get_detected_objects_sorted.fn
+        get_sorted_func = server_module.get_detected_objects_sorted
         result = get_sorted_func(ascending=True)
 
         assert "smallest to largest" in result
@@ -260,7 +260,7 @@ class TestObjectDetectionTools:
         ]
         self.mock_env.get_detected_objects.return_value = mock_objects
 
-        get_sorted_func = server_module.get_detected_objects_sorted.fn
+        get_sorted_func = server_module.get_detected_objects_sorted
         result = get_sorted_func(ascending=False)
 
         assert "largest to smallest" in result
@@ -283,7 +283,7 @@ class TestWorkspaceTools:
         """Test getting largest free space."""
         self.mock_env.get_largest_free_space_with_center.return_value = (0.0144, 0.25, 0.0)
 
-        get_free_space_func = server_module.get_largest_free_space_with_center.fn
+        get_free_space_func = server_module.get_largest_free_space_with_center
         result = get_free_space_func()
 
         assert "Largest free space" in result
@@ -293,7 +293,7 @@ class TestWorkspaceTools:
         """Test getting upper left corner coordinate."""
         self.mock_env.get_workspace_coordinate_from_point.return_value = [0.337, 0.087]
 
-        get_coord_func = server_module.get_workspace_coordinate_from_point.fn
+        get_coord_func = server_module.get_workspace_coordinate_from_point
         result = get_coord_func(workspace_id="niryo_ws", point="upper left corner")
 
         assert "0.337" in result
@@ -303,7 +303,7 @@ class TestWorkspaceTools:
         """Test getting center coordinate."""
         self.mock_env.get_workspace_coordinate_from_point.return_value = [0.25, 0.0]
 
-        get_coord_func = server_module.get_workspace_coordinate_from_point.fn
+        get_coord_func = server_module.get_workspace_coordinate_from_point
         result = get_coord_func(workspace_id="niryo_ws", point="center point")
 
         assert "0.25" in result
@@ -313,7 +313,7 @@ class TestWorkspaceTools:
         """Test getting object labels."""
         self.mock_env.get_object_labels_as_string.return_value = "pencil, pen, cube, cylinder, chocolate bar"
 
-        get_labels_func = server_module.get_object_labels_as_string.fn
+        get_labels_func = server_module.get_object_labels_as_string
         result = get_labels_func()
 
         assert "pencil" in result
@@ -323,7 +323,7 @@ class TestWorkspaceTools:
         """Test adding new object label."""
         self.mock_env.add_object_name2object_labels.return_value = "Added 'screwdriver' to recognizable objects"
 
-        add_label_func = server_module.add_object_name2object_labels.fn
+        add_label_func = server_module.add_object_name2object_labels
         result = add_label_func(object_name="screwdriver")
 
         assert "screwdriver" in result
@@ -345,7 +345,7 @@ class TestFeedbackTools:
         """Test text-to-speech."""
         self.mock_env.oralcom_call_text2speech_async.return_value = None
 
-        speak_func = server_module.speak.fn
+        speak_func = server_module.speak
         result = speak_func(text="Hello, I am picking up the pencil")
 
         assert "Speaking:" in result

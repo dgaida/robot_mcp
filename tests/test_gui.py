@@ -160,9 +160,17 @@ class TestGradioInterface:
             "robot_gui.mcp_app.gr.Column"
         ), patch("robot_gui.mcp_app.gr.HTML"), patch("robot_gui.mcp_app.gr.Markdown"), patch(
             "robot_gui.mcp_app.gr.Textbox"
-        ), patch("robot_gui.mcp_app.gr.Button"), patch("robot_gui.mcp_app.gr.Chatbot"), patch(
+        ), patch(
+            "robot_gui.mcp_app.gr.Button"
+        ), patch(
+            "robot_gui.mcp_app.gr.Chatbot"
+        ), patch(
             "robot_gui.mcp_app.gr.Examples"
-        ), patch("robot_gui.mcp_app.gr.Image"), patch("robot_gui.mcp_app.gr.Timer"):
+        ), patch(
+            "robot_gui.mcp_app.gr.Image"
+        ), patch(
+            "robot_gui.mcp_app.gr.Timer"
+        ):
             mock_demo = MagicMock()
             mock_blocks.return_value.__enter__.return_value = mock_demo
 
