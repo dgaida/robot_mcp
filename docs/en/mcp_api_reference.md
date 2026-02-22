@@ -987,10 +987,11 @@ class PickPlaceInput(BaseModel):
         if isinstance(v, Location):
             return v
         if isinstance(v, str):
-            valid_locations = [loc.value for loc in Location if loc
+            valid_locations = [loc.value for loc in Location if loc.value is not None]
+            if v.lower() not in [loc.lower() for loc in valid_locations]:
+                raise ValueError(f"Invalid location '{v}'")
+            return v
 ```
-
-# TODO: example above uncomplete
 
 ---
 

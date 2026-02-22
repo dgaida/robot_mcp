@@ -170,7 +170,7 @@ class RobotMCPGUI:
 
         Args:
             message: User message
-            history: Chat history (list of tuples)
+            history: Chat history (list of dicts for type="messages")
 
         Yields:
             Updated chat history
@@ -180,29 +180,31 @@ class RobotMCPGUI:
             return
 
         if not self.mcp_connected:
-            history.append((message, "⚠️ MCP server not connected. Please connect first."))
+            history.append({"role": "user", "content": message})
+            history.append({"role": "assistant", "content": "⚠️ MCP server not connected. Please connect first."})
             yield history
             return
 
-        # Add user message (initially with no response)
-        history.append((message, ""))
+        # Add user message and initial assistant message
+        history.append({"role": "user", "content": message})
+        history.append({"role": "assistant", "content": ""})
         yield history
 
         try:
             # Add "thinking" indicator
-            history[-1] = (message, "🤔 Processing...")
+            history[-1]["content"] = "🤔 Processing..."
             yield history
 
             # Process through MCP client
             response = await self.mcp_client.chat(message)
 
             # Update with actual response
-            history[-1] = (message, response)
+            history[-1]["content"] = response
             yield history
 
         except Exception as e:
             error_msg = f"❌ Error: {str(e)}"
-            history[-1] = (message, error_msg)
+            history[-1]["content"] = error_msg
             yield history
 
     def record_voice(self):
@@ -331,8 +333,8 @@ def create_gradio_interface(gui: RobotMCPGUI):
         with gr.Row():
             # Left: Chat interface
             with gr.Column(scale=2):
-                # Simple chatbot without optional parameters for max compatibility
-                chatbot = gr.Chatbot(label="Robot Assistant", height=500)
+                # Use type="messages" for modern Gradio compatibility
+                chatbot = gr.Chatbot(label="Robot Assistant", height=500, type="messages")
 
                 with gr.Row():
                     msg_input = gr.Textbox(
