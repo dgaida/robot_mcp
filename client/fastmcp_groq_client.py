@@ -94,6 +94,12 @@ class RobotFastMCPClient:
         self.available_tools = await self.client.list_tools()
         print(f"Connected! Found tools: {[t.name for t in self.available_tools]}")
 
+        # Call get_system_status immediately after connection
+        tool_names = [t.name for t in self.available_tools]
+        if "get_system_status" in tool_names:
+            print("\n📊 Initial System Status:")
+            await self.call_tool("get_system_status", {})
+
     async def disconnect(self):
         if hasattr(self, "client"):
             await self.client.__aexit__(None, None, None)

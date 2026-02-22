@@ -246,6 +246,11 @@ Always verify object positions before manipulation."""
         print(f"Model: {self.llm_client.llm}")
         print(f"Found {len(self.available_tools)} tools: {tool_names}")
 
+        # Call get_system_status immediately after connection
+        if "get_system_status" in tool_names:
+            print("\n📊 Initial System Status:")
+            await self.call_tool("get_system_status", {})
+
     async def disconnect(self):
         """Disconnect from MCP server."""
         logger.info("=" * 60)
