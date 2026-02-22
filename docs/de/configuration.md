@@ -719,7 +719,7 @@ cd server && python fastmcp_robot_server_with_config.py  # ❌ Won't work
 - **Configuration Reference**: See `config/robot_config.yaml` for all options
 - **Pydantic Documentation**: https://docs.pydantic.dev/
 - **YAML Syntax**: https://yaml.org/
-- **Server Documentation**: `docs/mcp_setup_guide.md`
+- **Server Documentation**: `docs/getting-started.md`
 - **API Reference**: `docs/mcp_api_reference.md`
 
 ---

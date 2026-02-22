@@ -379,12 +379,12 @@ def pick_place_object(
 
     Args:
         object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
-        the robot's workspace.
+            the robot's workspace.
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
-        coordinates to identify the object's exact position.
+            coordinates to identify the object's exact position.
         place_coordinate (List): The world coordinates [x, y] where the object should be placed at.
-        location (Location or str): Specifies the relative placement position of the picked object in relation to an
-        object being at the 'place_coordinate'. Possible values are defined in the `Location` Enum:
+        location (Union[Location, str, None]): Specifies the relative placement position of the picked object in relation
+            to an object being at the 'place_coordinate'. Possible values are defined in the Location Enum:
             - `Location.LEFT_NEXT_TO`: Left of the reference object.
             - `Location.RIGHT_NEXT_TO`: Right of the reference object.
             - `Location.ABOVE`: Above the reference object.
@@ -392,9 +392,9 @@ def pick_place_object(
             - `Location.ON_TOP_OF`: On top of the reference object.
             - `Location.INSIDE`: Inside the reference object.
             - `Location.NONE`: No specific location relative to another object.
-        or 'left next to', 'right next to', 'above', 'below', 'on top of', 'inside'
+            Alternatively, use string values like 'left next to', 'right next to', 'above', 'below', 'on top of', 'inside'.
         z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
-        Useful for picking objects that are stacked on top of other objects.
+            Useful for picking objects that are stacked on top of other objects.
 
     Returns:
         str: Success message or error description
@@ -461,13 +461,13 @@ def move2by(
 
     Args:
         object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
-        the robot's workspace.
+            the robot's workspace.
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
-        coordinates to identify the object's exact position.
+            coordinates to identify the object's exact position.
         direction (str): Direction to which object is moved. Possible values are: 'left', 'right', 'up', 'down'.
         distance (float): Specifies the relative distance in meters to which the object should be moved.
         z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
-        Useful for picking objects that are stacked on top of other objects or are blocking other objects.
+            Useful for picking objects that are stacked on top of other objects or are blocking other objects.
 
     Returns:
         str: Success message or error description
@@ -523,11 +523,11 @@ def pick_object(object_name: str, pick_coordinate: List[float], z_offset: float 
 
     Args:
         object_name (str): The name of the object to be picked up. Ensure this name matches an object visible in
-        the robot's workspace.
+            the robot's workspace.
         pick_coordinate (List): The world coordinates [x, y] where the object should be picked up. Use these
-        coordinates to identify the object's exact position.
+            coordinates to identify the object's exact position.
         z_offset (float): Additional height offset in meters to apply when picking (default: 0.001).
-        Useful for picking objects that are stacked on top of other objects.
+            Useful for picking objects that are stacked on top of other objects.
     Returns:
         str: Success message or error description
     """
@@ -559,10 +559,10 @@ def place_object(place_coordinate: List[float], location: Union[Location, str, N
     --> Places the already gripped object left next to the world coordinate [0.2, 0.0].
 
     Args:
-        place_coordinate: The world coordinates [x, y] of the target object.
-        location (str): Specifies the relative placement position of the picked object in relation to an object
-        being at the 'place_coordinate'. Possible positions: 'left next to', 'right next to', 'above', 'below',
-        'on top of', 'inside', or None. Set to None, if there is no location given in the task.
+        place_coordinate (List[float]): The world coordinates [x, y] of the target object.
+        location (Union[Location, str, None]): Specifies the relative placement position of the picked object in relation
+            to an object being at the 'place_coordinate'. Possible positions: 'left next to', 'right next to', 'above',
+            'below', 'on top of', 'inside', or None. Set to None, if there is no location given in the task.
     Returns:
         str: Success message or error description
     """

@@ -44,16 +44,13 @@ plugins:
       docs_structure: folder
       fallback_to_default: true
       languages:
-        - code: de
+        - locale: de
           name: Deutsch
-          locale: de
           default: true
           build: true
-        - code: en
+        - locale: en
           name: English
-          locale: en
           build: true
-      default_language: de
   - mkdocstrings:
       handlers:
         python:
