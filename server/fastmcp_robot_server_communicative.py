@@ -268,6 +268,7 @@ def log_tool_call(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper that logs the tool call and its results."""
         tool_name = func.__name__
 
         # Log incoming call
@@ -306,6 +307,7 @@ def log_tool_call_with_explanation(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper that logs the tool call and generates an explanation."""
         tool_name = func.__name__
 
         # Log incoming call
@@ -374,8 +376,11 @@ def validate_input(model_class):
     """Decorator to validate tool inputs using Pydantic models."""
 
     def decorator(func):
+        """The actual decorator function."""
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """Wrapper that performs Pydantic validation."""
             try:
                 validated_data = model_class(**kwargs)
                 result = func(*args, **validated_data.model_dump())

@@ -1,4 +1,9 @@
-# fastmcp_groq_client.py
+"""
+FastMCP Groq Client for Robot Control.
+
+This module provides a specialized MCP client that uses Groq's LLM API
+to control robots through natural language commands.
+"""
 
 import asyncio
 import json
@@ -19,6 +24,13 @@ logger = logging.getLogger("RobotMCPClient")
 
 
 class RobotFastMCPClient:
+    """
+    MCP Client for robot control using Groq LLM.
+
+    Integrates FastMCP with Groq's API to provide natural language
+    interaction for robotic pick-and-place tasks and object detection.
+    """
+
     def __init__(self, groq_api_key: str, model: str = "moonshotai/kimi-k2-instruct-0905"):
         self.groq_client = Groq(api_key=groq_api_key)
         self.model = model
@@ -88,6 +100,7 @@ class RobotFastMCPClient:
     #         - Y-axis: left/right from robot base
 
     async def connect(self):
+        """Connect to the FastMCP server and initialize tools."""
         print("🤖 Connecting to FastMCP server...")
         await self.client.__aenter__()
 
@@ -105,6 +118,7 @@ class RobotFastMCPClient:
             )
 
     async def disconnect(self):
+        """Gracefully disconnect from the FastMCP server."""
         if hasattr(self, "client"):
             await self.client.__aexit__(None, None, None)
         print("✓ Disconnected from MCP server")
@@ -350,6 +364,7 @@ class RobotFastMCPClient:
 
 
 async def main():
+    """Main entry point for the Groq MCP client."""
     load_dotenv(dotenv_path="secrets.env")
 
     api_key = os.getenv("GROQ_API_KEY")
