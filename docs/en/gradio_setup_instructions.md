@@ -241,7 +241,7 @@ conda env create -f robot_gui/environment.yml
 
 For issues or questions:
 - Check logs in `log/` directory
-- See main README.md
+- See main index.md
 - Open issue on GitHub
 
 ## License

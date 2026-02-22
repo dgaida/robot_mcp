@@ -1736,7 +1736,17 @@ client = RobotUniversalMCPClient(
 
 ---
 
+## Error Handling
+
+The Robot MCP system uses a multi-layered error handling approach:
+
+1.  **Pydantic Validation**: Catches invalid parameter types, missing required fields, and out-of-bounds coordinates before they reach the robot.
+2.  **Robot Safety**: The hardware abstraction layer prevents dangerous movements and handles collisions (especially for Niryo Ned2).
+3.  **LLM Reasoning**: If a tool returns an error, the LLM can analyze the feedback and attempt a corrective action or explain the issue to the user.
+
+## Examples
+
 For more examples, see:
-- [Setup Guide](mcp_setup_guide.md)
+- [Setup Guide](getting-started.md)
 - [Examples](examples.md)
 - [Troubleshooting](troubleshooting.md)

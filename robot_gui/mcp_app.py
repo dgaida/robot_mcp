@@ -365,21 +365,26 @@ def create_gradio_interface(gui: RobotMCPGUI):
 
         # Event handlers
         async def handle_connect():
+            """Handle MCP connection button click."""
             success, message = await gui.connect_mcp()
             return gui.get_status_html(), message
 
         async def handle_submit(message, history):
+            """Handle chat message submission."""
             async for updated_history in gui.process_chat(message, history):
                 yield "", updated_history
 
         def handle_voice():
+            """Handle voice recording button click."""
             return gui.record_voice()
 
         def handle_clear():
+            """Handle chat history clearing."""
             gui.chat_history = []
             return []
 
         def update_camera():
+            """Update the camera feed image."""
             return gui.get_latest_frame()
 
         # Wire up events

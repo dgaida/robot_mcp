@@ -64,7 +64,7 @@ All tools are exposed via FastMCP and can be called through:
 3. **Web GUI** - Gradio interface with voice input
 4. **REST API** - HTTP endpoints (if enabled)
 
-See [Setup Guide](mcp_setup_guide.md) for usage instructions.
+See [Setup Guide](getting-started.md) for usage instructions.
 
 ## Quick Reference
 
@@ -855,9 +855,9 @@ get_workspace_coordinate_from_point("niryo_ws", "upper left corner")
 
 ## Additional Resources
 
-- **[Setup Guide](mcp_setup_guide.md)** - Installation and configuration
+- **[Setup Guide](getting-started.md)** - Installation and configuration
 - **[Examples](examples.md)** - Common use cases and workflows
-- **[Architecture](README.md)** - System design and data flow
+- **[Architecture](index.md)** - System design and data flow
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
 ## Contributing

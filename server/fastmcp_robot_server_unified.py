@@ -182,6 +182,17 @@ class ExplanationGenerator:
             return self._generate_fallback_explanation(tool_name, arguments)
 
     def _build_explanation_prompt(self, tool_name: str, tool_description: str, arguments: dict) -> str:
+        """
+        Build the prompt for explanation generation.
+
+        Args:
+            tool_name: Name of the tool.
+            tool_description: Description of the tool.
+            arguments: Arguments passed to the tool.
+
+        Returns:
+            str: The formatted prompt.
+        """
         args_str = ", ".join([f"{k}={v}" for k, v in arguments.items()])
 
         prompt = f"""Explain in 1-2 friendly sentences what the robot is about to do:
@@ -240,8 +251,11 @@ def validate_input(model_class):
     """Decorator to validate tool inputs using Pydantic models."""
 
     def decorator(func):
+        """The actual decorator function."""
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """Wrapper that performs Pydantic validation."""
             try:
                 # Validate input using Pydantic model
                 validated_data = model_class(**kwargs)
@@ -273,6 +287,7 @@ def log_tool_call(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper that logs the tool call and its results."""
         tool_name = func.__name__
 
         # Log incoming call
@@ -311,6 +326,7 @@ def log_tool_call_with_explanation(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper that logs the tool call and generates an explanation."""
         tool_name = func.__name__
 
         # Log incoming call

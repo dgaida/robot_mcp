@@ -1,3 +1,10 @@
+"""
+Metrics Generation Script.
+
+This script runs various quality tools (interrogate, ruff, pytest) and
+generates a markdown dashboard with the results.
+"""
+
 import os
 import re
 import subprocess
@@ -5,6 +12,15 @@ from datetime import datetime
 
 
 def run_command(command):
+    """
+    Run a shell command and return its output.
+
+    Args:
+        command: The command to run.
+
+    Returns:
+        tuple: (stdout, stderr, returncode)
+    """
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         return result.stdout, result.stderr, result.returncode
@@ -13,6 +29,12 @@ def run_command(command):
 
 
 def get_interrogate_coverage():
+    """
+    Get API docstring coverage percentage using interrogate.
+
+    Returns:
+        str: Coverage percentage as a string.
+    """
     stdout, stderr, code = run_command("interrogate .")
     # Search for TOTAL ... Cover%
     match = re.search(r"TOTAL\s+\|\s+\d+\s+\|\s+\d+\s+\|\s+\d+\s+\|\s+([\d.]+)%", stdout)
@@ -28,6 +50,12 @@ def get_interrogate_coverage():
 
 
 def get_ruff_status():
+    """
+    Get ruff linting status.
+
+    Returns:
+        str: Linting status message.
+    """
     stdout, stderr, code = run_command("ruff check .")
     if code == 0:
         return "✅ Passing"
@@ -39,6 +67,12 @@ def get_ruff_status():
 
 
 def get_pytest_coverage():
+    """
+    Get test coverage percentage using pytest-cov.
+
+    Returns:
+        str: Coverage percentage as a string.
+    """
     # Run pytest with a timeout or just skip if it takes too long
     stdout, stderr, code = run_command("pytest --cov=client --cov=server --cov=robot_gui tests/ --durations=5")
     match = re.search(r"TOTAL\s+\d+\s+\d+\s+([\d.]+)%", stdout)
@@ -48,6 +82,7 @@ def get_pytest_coverage():
 
 
 def generate_dashboard():
+    """Generate the metrics dashboard in Markdown format."""
     api_cov = get_interrogate_coverage()
     test_cov = get_pytest_coverage()
     lint_status = get_ruff_status()
@@ -55,6 +90,7 @@ def generate_dashboard():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def get_status_emoji(value, threshold):
+        """Get emoji based on metric value and threshold."""
         try:
             if float(value) >= threshold:
                 return "✅"
