@@ -259,8 +259,46 @@ def init_explanation_generator(api_choice: str = "groq", verbose: bool = False):
 
 
 # ============================================================================
-# ENHANCED LOGGING DECORATOR
+# LOGGING DECORATORS
 # ============================================================================
+
+
+def log_tool_call(func):
+    """Decorator to log all tool calls with parameters and results."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        tool_name = func.__name__
+
+        # Log incoming call
+        logger.info("-" * 60)
+        logger.info(f"TOOL CALL: {tool_name}")
+
+        # Log arguments (be careful with sensitive data)
+        if args:
+            logger.info(f"  Args: {args}")
+        if kwargs:
+            logger.info(f"  Kwargs: {kwargs}")
+
+        try:
+            # Execute tool
+            result = func(*args, **kwargs)
+
+            # Log result
+            logger.info(f"  Result: {result}")
+            logger.info("  Status: SUCCESS")
+
+            return result
+
+        except Exception as e:
+            # Log error
+            logger.error(f"  Error: {str(e)}", exc_info=True)
+            logger.info("  Status: FAILED")
+            raise
+        finally:
+            logger.info("-" * 60)
+
+    return wrapper
 
 
 def log_tool_call_with_explanation(func):
@@ -369,12 +407,14 @@ def validate_input(model_class):
 mcp = FastMCP("robot-environment")
 env = None
 robot = None
+current_robot_id = None
 
 
 def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False):
     """Initialize the robot environment with given parameters."""
-    global env, robot
+    global env, robot, current_robot_id
 
+    current_robot_id = robot_id
     logger.info("=" * 60)
     logger.info("ENVIRONMENT INITIALIZATION")
     logger.info(f"  Robot ID: {robot_id}")
@@ -399,6 +439,49 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 # ============================================================================
 # EXAMPLE ENHANCED TOOLS (showing pattern)
 # ============================================================================
+
+
+@mcp.tool
+@log_tool_call
+def get_system_status() -> str:
+    """
+    Get the current status of the robot system.
+
+    Returns the robot ID, the current workspace ID, and the current
+    gripper pose (x, y, z, roll, pitch, yaw).
+
+    Examples:
+        get_system_status()
+        # Returns: {
+        #   "robot_id": "niryo",
+        #   "workspace_id": "niryo_ws",
+        #   "pose": {"x": 0.25, "y": 0.0, "z": 0.2, "roll": 0.0, "pitch": 1.57, "yaw": 0.0}
+        # }
+
+    Returns:
+        str: JSON string containing robot_id, workspace_id, and pose.
+    """
+    try:
+        import json
+
+        pose = env.get_robot_pose()
+        workspace_id = env.get_current_workspace_id() or env.get_workspace_home_id()
+
+        status = {
+            "robot_id": current_robot_id,
+            "workspace_id": workspace_id,
+            "pose": {
+                "x": round(pose.x, 3),
+                "y": round(pose.y, 3),
+                "z": round(pose.z, 3),
+                "roll": round(pose.roll, 3),
+                "pitch": round(pose.pitch, 3),
+                "yaw": round(pose.yaw, 3),
+            },
+        }
+        return json.dumps(status, indent=2)
+    except Exception as e:
+        return f"❌ Error getting system status: {str(e)}"
 
 
 @mcp.tool

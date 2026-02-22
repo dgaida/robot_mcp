@@ -224,6 +224,7 @@ Your explanation:"""
 mcp = FastMCP("robot-environment")
 env = None
 robot = None
+current_robot_id = None
 config = None
 explanation_generator = None
 text_overlay_manager = None
@@ -380,8 +381,9 @@ def log_tool_call_with_explanation(func):
 
 def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo", verbose=False, start_camera_thread=False):
     """Initialize the robot environment."""
-    global env, robot, text_overlay_manager
+    global env, robot, text_overlay_manager, current_robot_id
 
+    current_robot_id = robot_id
     logger.info("=" * 60)
     logger.info("ENVIRONMENT INITIALIZATION")
     logger.info(f"  Robot ID: {robot_id}")
@@ -415,6 +417,49 @@ def initialize_environment(el_api_key="", use_simulation=True, robot_id="niryo",
 # ============================================================================
 # ENVIRONMENT TOOLS
 # ============================================================================
+
+
+@mcp.tool
+@log_tool_call
+def get_system_status() -> str:
+    """
+    Get the current status of the robot system.
+
+    Returns the robot ID, the current workspace ID, and the current
+    gripper pose (x, y, z, roll, pitch, yaw).
+
+    Examples:
+        get_system_status()
+        # Returns: {
+        #   "robot_id": "niryo",
+        #   "workspace_id": "niryo_ws",
+        #   "pose": {"x": 0.25, "y": 0.0, "z": 0.2, "roll": 0.0, "pitch": 1.57, "yaw": 0.0}
+        # }
+
+    Returns:
+        str: JSON string containing robot_id, workspace_id, and pose.
+    """
+    try:
+        import json
+
+        pose = env.get_robot_pose()
+        workspace_id = env.get_current_workspace_id() or env.get_workspace_home_id()
+
+        status = {
+            "robot_id": current_robot_id,
+            "workspace_id": workspace_id,
+            "pose": {
+                "x": round(pose.x, 3),
+                "y": round(pose.y, 3),
+                "z": round(pose.z, 3),
+                "roll": round(pose.roll, 3),
+                "pitch": round(pose.pitch, 3),
+                "yaw": round(pose.yaw, 3),
+            },
+        }
+        return json.dumps(status, indent=2)
+    except Exception as e:
+        return f"❌ Error getting system status: {str(e)}"
 
 
 @mcp.tool
