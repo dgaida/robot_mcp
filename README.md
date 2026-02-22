@@ -2,7 +2,7 @@
 
 Natural language robot control using **FastMCP** and **Multi-LLM Support** (OpenAI, Groq, Gemini, Ollama).
 
-![Version](https://img.shields.io/badge/version-0.3.1-blue)
+![Version](https://img.shields.io/badge/version-0.3.2-blue)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/dgaida/robot_mcp/branch/master/graph/badge.svg)](https://codecov.io/gh/dgaida/robot_mcp)
