@@ -39,7 +39,7 @@ dependencies = [
 [project.optional-dependencies]
 # GUI dependencies
 gui = [
-    "gradio>=4.0.0,<5.0.0",
+    "gradio>=5.0.0",
     "redis_robot_comm @ git+https://github.com/dgaida/redis_robot_comm.git",
 ]
 

@@ -9,7 +9,7 @@ Features:
 - FastMCP client integration
 - Real-time object detection display
 
-Compatible with Gradio 3.x, 4.x, 5.x, and 6.x
+Compatible with Gradio 5.x and 6.x
 """
 
 import asyncio

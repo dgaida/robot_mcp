@@ -92,8 +92,10 @@ class TestRobotMCPGUI:
         async for update in gui.process_chat("Hello", history):
             updated_history = update
 
-        assert len(updated_history) == 1
-        assert "not connected" in updated_history[0][1].lower()
+        assert len(updated_history) == 2
+        assert updated_history[0]["role"] == "user"
+        assert updated_history[0]["content"] == "Hello"
+        assert "not connected" in updated_history[1]["content"].lower()
 
     @pytest.mark.asyncio
     async def test_process_chat_success(self, gui, mock_dependencies):
@@ -110,7 +112,8 @@ class TestRobotMCPGUI:
 
         assert len(updates) > 0
         final_history = updates[-1]
-        assert final_history[0] == ("Pick up pencil", "Robot response")
+        assert final_history[0] == {"role": "user", "content": "Pick up pencil"}
+        assert final_history[1] == {"role": "assistant", "content": "Robot response"}
         mock_client.chat.assert_called_once_with("Pick up pencil")
 
     def test_record_voice_success(self, gui, mock_dependencies):
