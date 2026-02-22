@@ -49,6 +49,7 @@ class ServerConfig(BaseModel):
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
+        """Validate that the log level is a valid Python logging level."""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
             raise ValueError(f"log_level must be one of {valid_levels}")
@@ -68,6 +69,7 @@ class WorkspaceBounds(BaseModel):
     @field_validator("x_max")
     @classmethod
     def validate_x_range(cls, v: float, info) -> float:
+        """Validate that x_max is greater than x_min."""
         if "x_min" in info.data and v <= info.data["x_min"]:
             raise ValueError("x_max must be greater than x_min")
         return v
@@ -75,6 +77,7 @@ class WorkspaceBounds(BaseModel):
     @field_validator("y_max")
     @classmethod
     def validate_y_range(cls, v: float, info) -> float:
+        """Validate that y_max is greater than y_min."""
         if "y_min" in info.data and v <= info.data["y_min"]:
             raise ValueError("y_max must be greater than y_min")
         return v
@@ -92,6 +95,7 @@ class WorkspaceConfig(BaseModel):
     @field_validator("center")
     @classmethod
     def validate_center(cls, v: list[float]) -> list[float]:
+        """Validate that the center coordinate is a list of two floats [x, y]."""
         if len(v) != 2:
             raise ValueError("center must be [x, y] coordinates")
         return v
@@ -127,6 +131,7 @@ class RobotConfig(BaseModel):
     @field_validator("type")
     @classmethod
     def validate_robot_type(cls, v: str) -> str:
+        """Validate that the robot type is supported."""
         valid_types = ["niryo", "widowx"]
         if v.lower() not in valid_types:
             raise ValueError(f"robot type must be one of {valid_types}")
@@ -159,6 +164,7 @@ class DetectionConfig(BaseModel):
     @field_validator("model")
     @classmethod
     def validate_model(cls, v: str) -> str:
+        """Validate that the detection model is supported."""
         valid_models = ["owlv2", "yoloworld"]
         if v.lower() not in valid_models:
             raise ValueError(f"model must be one of {valid_models}")
@@ -167,6 +173,7 @@ class DetectionConfig(BaseModel):
     @field_validator("device")
     @classmethod
     def validate_device(cls, v: str) -> str:
+        """Validate that the computation device is supported."""
         valid_devices = ["cuda", "cpu"]
         if v.lower() not in valid_devices:
             raise ValueError(f"device must be one of {valid_devices}")
@@ -201,6 +208,7 @@ class LLMConfig(BaseModel):
     @field_validator("default_provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
+        """Validate that the LLM provider is supported."""
         valid_providers = ["auto", "openai", "groq", "gemini", "ollama"]
         if v.lower() not in valid_providers:
             raise ValueError(f"provider must be one of {valid_providers}")
@@ -232,6 +240,7 @@ class TTSConfig(BaseModel):
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
+        """Validate that the TTS provider is supported."""
         valid_providers = ["elevenlabs", "kokoro", "none"]
         if v.lower() not in valid_providers:
             raise ValueError(f"TTS provider must be one of {valid_providers}")
@@ -345,7 +354,10 @@ class ConfigManager:
     """
 
     _instance: Optional["ConfigManager"] = None
+    """Singleton instance of the ConfigManager."""
+
     _config: Optional[RobotMCPConfig] = None
+    """The root configuration object."""
 
     def __init__(self, config: RobotMCPConfig):
         """Initialize with validated config."""
@@ -437,6 +449,7 @@ class ConfigManager:
             pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
 
             def replace(match):
+                """Replace match with environment variable or default."""
                 var_name = match.group(1)
                 default_value = match.group(2)
                 return os.getenv(var_name, default_value or match.group(0))
@@ -531,37 +544,46 @@ class ConfigManager:
     # Convenience properties for direct access
     @property
     def server(self) -> ServerConfig:
+        """Get the server configuration."""
         return self._config.server
 
     @property
     def robot(self) -> RobotConfig:
+        """Get the robot configuration."""
         return self._config.robot
 
     @property
     def detection(self) -> DetectionConfig:
+        """Get the object detection configuration."""
         return self._config.detection
 
     @property
     def llm(self) -> LLMConfig:
+        """Get the LLM configuration."""
         return self._config.llm
 
     @property
     def tts(self) -> TTSConfig:
+        """Get the text-to-speech configuration."""
         return self._config.tts
 
     @property
     def redis(self) -> RedisConfig:
+        """Get the Redis configuration."""
         return self._config.redis
 
     @property
     def gui(self) -> GUIConfig:
+        """Get the GUI configuration."""
         return self._config.gui
 
     @property
     def logging(self) -> LoggingConfig:
+        """Get the logging configuration."""
         return self._config.logging
 
     def __repr__(self) -> str:
+        """Return string representation of ConfigManager."""
         return f"ConfigManager(server={self.server.host}:{self.server.port}, robot={self.robot.type})"
 
 
