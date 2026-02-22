@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 # ============================================================================
 # PYDANTIC MODELS FOR TYPE-SAFE CONFIGURATION
@@ -37,6 +37,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 
 class ServerConfig(BaseModel):
     """Server configuration settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     host: str = Field("127.0.0.1", description="Server host address")
     port: int = Field(8000, ge=1024, le=65535, description="Server port")
@@ -55,6 +57,8 @@ class ServerConfig(BaseModel):
 
 class WorkspaceBounds(BaseModel):
     """Workspace boundary coordinates."""
+
+    model_config = ConfigDict(extra="forbid")
 
     x_min: float = Field(..., description="Minimum X coordinate (meters)")
     x_max: float = Field(..., description="Maximum X coordinate (meters)")
@@ -79,6 +83,8 @@ class WorkspaceBounds(BaseModel):
 class WorkspaceConfig(BaseModel):
     """Workspace configuration."""
 
+    model_config = ConfigDict(extra="forbid")
+
     id: str = Field(..., description="Workspace identifier")
     bounds: WorkspaceBounds = Field(..., description="Workspace boundaries")
     center: list[float] = Field(..., description="Workspace center [x, y]")
@@ -94,6 +100,8 @@ class WorkspaceConfig(BaseModel):
 class MotionConfig(BaseModel):
     """Robot motion parameters."""
 
+    model_config = ConfigDict(extra="forbid")
+
     pick_z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Z-offset for picking (m)")
     place_z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Z-offset for placing (m)")
     safe_height: float = Field(0.15, ge=0.05, le=0.5, description="Safe height (m)")
@@ -105,6 +113,8 @@ class MotionConfig(BaseModel):
 
 class RobotConfig(BaseModel):
     """Robot configuration settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     type: str = Field("niryo", description="Robot type")
     simulation: bool = Field(True, description="Use simulation mode")
@@ -126,6 +136,8 @@ class RobotConfig(BaseModel):
 class SpatialConfig(BaseModel):
     """Spatial query thresholds."""
 
+    model_config = ConfigDict(extra="forbid")
+
     close_to_radius_m: float = Field(0.02, ge=0.001, le=0.5, description="'Close to' radius (m)")
     left_right_threshold_m: float = Field(0.01, ge=0.001, le=0.1, description="Left/right threshold (m)")
     above_below_threshold_m: float = Field(0.01, ge=0.001, le=0.1, description="Above/below threshold (m)")
@@ -133,6 +145,8 @@ class SpatialConfig(BaseModel):
 
 class DetectionConfig(BaseModel):
     """Object detection settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     model: str = Field("owlv2", description="Detection model")
     device: str = Field("cuda", description="Computation device")
@@ -162,6 +176,8 @@ class DetectionConfig(BaseModel):
 class LLMProviderConfig(BaseModel):
     """LLM provider-specific settings."""
 
+    model_config = ConfigDict(extra="forbid")
+
     enabled: bool = Field(True, description="Enable this provider")
     default_model: str = Field(..., description="Default model name")
     models: list[str] = Field(default_factory=list, description="Available models")
@@ -171,6 +187,8 @@ class LLMProviderConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     """LLM configuration settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     default_provider: str = Field("auto", description="Default LLM provider")
     temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
@@ -192,6 +210,8 @@ class LLMConfig(BaseModel):
 class TTSProviderConfig(BaseModel):
     """TTS provider settings."""
 
+    model_config = ConfigDict(extra="forbid")
+
     voice_id: Optional[str] = None
     voice: Optional[str] = None
     stability: Optional[float] = Field(None, ge=0.0, le=1.0)
@@ -201,6 +221,8 @@ class TTSProviderConfig(BaseModel):
 
 class TTSConfig(BaseModel):
     """Text-to-speech settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     enabled: bool = Field(True, description="Enable TTS")
     provider: str = Field("elevenlabs", description="TTS provider")
@@ -219,6 +241,8 @@ class TTSConfig(BaseModel):
 class RedisStreamsConfig(BaseModel):
     """Redis stream names."""
 
+    model_config = ConfigDict(extra="forbid")
+
     camera: str = Field("robot_camera", description="Camera stream name")
     detected_objects: str = Field("detected_objects", description="Detected objects stream")
     annotated_frames: str = Field("annotated_frames", description="Annotated frames stream")
@@ -226,6 +250,8 @@ class RedisStreamsConfig(BaseModel):
 
 class RedisConfig(BaseModel):
     """Redis connection settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     host: str = Field("localhost", description="Redis host")
     port: int = Field(6379, ge=1, le=65535, description="Redis port")
@@ -236,6 +262,8 @@ class RedisConfig(BaseModel):
 
 class GUIConfig(BaseModel):
     """GUI settings."""
+
+    model_config = ConfigDict(extra="forbid")
 
     host: str = Field("127.0.0.1", description="GUI host")
     port: int = Field(7860, ge=1024, le=65535, description="GUI port")
@@ -248,12 +276,16 @@ class GUIConfig(BaseModel):
 class LogRotationConfig(BaseModel):
     """Log rotation settings."""
 
+    model_config = ConfigDict(extra="forbid")
+
     max_bytes: int = Field(10485760, ge=1024, description="Max log file size (bytes)")
     backup_count: int = Field(5, ge=1, le=100, description="Number of backup files")
 
 
 class LoggingConfig(BaseModel):
     """Logging configuration."""
+
+    model_config = ConfigDict(extra="forbid")
 
     format: str = Field(..., description="Log message format")
     date_format: str = Field("%Y-%m-%d %H:%M:%S", description="Date format")
@@ -264,6 +296,8 @@ class LoggingConfig(BaseModel):
 class EnvironmentOverrides(BaseModel):
     """Environment-specific configuration overrides."""
 
+    model_config = ConfigDict(extra="allow")
+
     server: Optional[Dict[str, Any]] = None
     robot: Optional[Dict[str, Any]] = None
     llm: Optional[Dict[str, Any]] = None
@@ -271,6 +305,8 @@ class EnvironmentOverrides(BaseModel):
 
 class RobotMCPConfig(BaseModel):
     """Root configuration model."""
+
+    model_config = ConfigDict(extra="forbid")
 
     server: ServerConfig
     robot: RobotConfig

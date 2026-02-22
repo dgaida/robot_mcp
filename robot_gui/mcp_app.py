@@ -127,6 +127,10 @@ class RobotMCPGUI:
 
     def _init_speech2text(self):
         """Initialize speech-to-text system."""
+        if Speech2Text is None:
+            # Already logged at module level, but good to be explicit here
+            return
+
         try:
             device = "cuda" if torch.cuda.is_available() else "cpu"
             torch_dtype = torch.float16 if device == "cuda" else torch.float32
