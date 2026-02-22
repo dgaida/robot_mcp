@@ -73,6 +73,7 @@ class RobotMCPServer:
         self.robot = self.env.robot()
         self.server = Server("robot-environment")
 
+        self.robot_id = robot_id
         self.available_tools = self._create_tool_definitions()
 
         # Request Counter für Debugging
@@ -88,6 +89,15 @@ class RobotMCPServer:
         logger.debug("Creating tool definitions...")
 
         tools = [
+            Tool(
+                name="get_system_status",
+                description=(
+                    "Get the current status of the robot system. "
+                    "Returns the robot ID, the current workspace ID, and the current "
+                    "gripper pose (x, y, z, roll, pitch, yaw)."
+                ),
+                inputSchema={"type": "object", "properties": {}},
+            ),
             Tool(
                 name="pick_place_object",
                 description=(
@@ -425,7 +435,25 @@ class RobotMCPServer:
             logger.debug(f"Arguments: {json.dumps(arguments, indent=2)}")
 
             try:
-                if name == "pick_place_object":
+                if name == "get_system_status":
+                    pose = self.env.get_robot_pose()
+                    workspace_id = self.env.get_current_workspace_id() or self.env.get_workspace_home_id()
+
+                    status = {
+                        "robot_id": self.robot_id,
+                        "workspace_id": workspace_id,
+                        "pose": {
+                            "x": round(pose.x, 3),
+                            "y": round(pose.y, 3),
+                            "z": round(pose.z, 3),
+                            "roll": round(pose.roll, 3),
+                            "pitch": round(pose.pitch, 3),
+                            "yaw": round(pose.yaw, 3),
+                        },
+                    }
+                    return [TextContent(type="text", text=json.dumps(status, indent=2))]
+
+                elif name == "pick_place_object":
                     self.robot.pick_place_object(
                         object_name=arguments["object_name"],
                         pick_coordinate=arguments["pick_coordinate"],

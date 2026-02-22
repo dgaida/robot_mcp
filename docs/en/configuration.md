@@ -521,6 +521,7 @@ Add custom validators in `config_manager.py`:
 
 ```python
 class ServerConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     port: int = Field(8000, ge=1024, le=65535)
 
     @field_validator("port")

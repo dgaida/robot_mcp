@@ -1,0 +1,73 @@
+name: Auto Versioning
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'pyproject.toml'
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Increment version
+        id: bump
+        run: |
+          python -c "
+          import re
+          from pathlib import Path
+
+          # Update pyproject.toml
+          pyproject = Path('pyproject.toml')
+          content = pyproject.read_text()
+          version_match = re.search(r'version = \"(\d+)\.(\d+)\.(\d+)\"', content)
+          if not version_match:
+              raise ValueError('Could not find version in pyproject.toml')
+
+          major, minor, patch = map(int, version_match.groups())
+          new_patch = patch + 1
+          new_version = f'{major}.{minor}.{new_patch}'
+
+          new_content = re.sub(r'version = \".*\"', f'version = \"{new_version}\"', content, count=1)
+          pyproject.write_text(new_content)
+
+          # Update README.md badge
+          readme = Path('README.md')
+          readme_content = readme.read_text()
+          new_readme = re.sub(r'badge/version-.*-blue', f'badge/version-{new_version}-blue', readme_content)
+          readme.write_text(new_readme)
+
+          import os
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'new_version={new_version}\n')
+          "
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml README.md
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push origin master
+
+      - name: Create Tag
+        run: |
+          git tag v${{ steps.bump.outputs.new_version }}
+          git push origin v${{ steps.bump.outputs.new_version }}
