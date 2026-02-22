@@ -259,8 +259,46 @@ def init_explanation_generator(api_choice: str = "groq", verbose: bool = False):
 
 
 # ============================================================================
-# ENHANCED LOGGING DECORATOR
+# LOGGING DECORATORS
 # ============================================================================
+
+
+def log_tool_call(func):
+    """Decorator to log all tool calls with parameters and results."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        tool_name = func.__name__
+
+        # Log incoming call
+        logger.info("-" * 60)
+        logger.info(f"TOOL CALL: {tool_name}")
+
+        # Log arguments (be careful with sensitive data)
+        if args:
+            logger.info(f"  Args: {args}")
+        if kwargs:
+            logger.info(f"  Kwargs: {kwargs}")
+
+        try:
+            # Execute tool
+            result = func(*args, **kwargs)
+
+            # Log result
+            logger.info(f"  Result: {result}")
+            logger.info("  Status: SUCCESS")
+
+            return result
+
+        except Exception as e:
+            # Log error
+            logger.error(f"  Error: {str(e)}", exc_info=True)
+            logger.info("  Status: FAILED")
+            raise
+        finally:
+            logger.info("-" * 60)
+
+    return wrapper
 
 
 def log_tool_call_with_explanation(func):

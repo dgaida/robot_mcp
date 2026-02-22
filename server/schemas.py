@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from robot_workspace import Location
 
 # ============================================================================
@@ -12,6 +12,8 @@ from robot_workspace import Location
 
 class CoordinateModel(BaseModel):
     """Validates 2D coordinate [x, y] in meters."""
+
+    model_config = ConfigDict(extra="forbid")
 
     coordinate: List[float] = Field(..., min_length=2, max_length=2)
 
@@ -26,14 +28,13 @@ class CoordinateModel(BaseModel):
 class PickPlaceInput(BaseModel):
     """Input validation for pick_place_object."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+
     object_name: str = Field(..., min_length=1, description="Name of the object to pick")
     pick_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     place_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     location: Optional[Union[Location, str]] = Field(None, description="Relative placement location")
     z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Height offset in meters (0.0-0.1)")
-
-    class Config:
-        arbitrary_types_allowed = True  # Allow enum types
 
     @field_validator("pick_coordinate", "place_coordinate")
     @classmethod
@@ -73,6 +74,8 @@ class PickPlaceInput(BaseModel):
 class PickObjectInput(BaseModel):
     """Input validation for pick_object."""
 
+    model_config = ConfigDict(extra="forbid")
+
     object_name: str = Field(..., min_length=1)
     pick_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     z_offset: float = Field(0.001, ge=0.0, le=0.1, description="Height offset in meters (0.0-0.1)")
@@ -87,6 +90,8 @@ class PickObjectInput(BaseModel):
 
 class PlaceObjectInput(BaseModel):
     """Input validation for place_object."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     place_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     location: Optional[Union[Location, str]] = Field(None, description="Relative placement location")
@@ -121,6 +126,8 @@ class PlaceObjectInput(BaseModel):
 class PushObjectInput(BaseModel):
     """Input validation for push_object."""
 
+    model_config = ConfigDict(extra="forbid")
+
     object_name: str = Field(..., min_length=1)
     push_coordinate: List[float] = Field(..., min_length=2, max_length=2)
     direction: str = Field(...)
@@ -145,6 +152,8 @@ class PushObjectInput(BaseModel):
 class WorkspacePointInput(BaseModel):
     """Input validation for get_workspace_coordinate_from_point."""
 
+    model_config = ConfigDict(extra="forbid")
+
     workspace_id: str = Field(..., min_length=1)
     point: str = Field(...)
 
@@ -159,6 +168,8 @@ class WorkspacePointInput(BaseModel):
 
 class GetDetectedObjectsInput(BaseModel):
     """Input validation for get_detected_objects."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     location: Optional[Union[Location, str]] = Field(None, description="Relative location")
     coordinate: Optional[List[float]] = Field(None, min_length=2, max_length=2)
