@@ -1,4 +1,9 @@
-# schemas.py
+"""
+Input Validation Schemas for Robot MCP.
+
+This module defines Pydantic models used for validating tool inputs in the
+FastMCP server, ensuring type safety and correct coordinate formats.
+"""
 
 from typing import List, Optional, Union
 
@@ -20,6 +25,7 @@ class CoordinateModel(BaseModel):
     @field_validator("coordinate")
     @classmethod
     def validate_coordinate_values(cls, v):
+        """Validate that all coordinate values are numeric."""
         if not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values")
         return v
@@ -39,6 +45,7 @@ class PickPlaceInput(BaseModel):
     @field_validator("pick_coordinate", "place_coordinate")
     @classmethod
     def validate_coordinates(cls, v):
+        """Validate that pick and place coordinates are numeric [x, y]."""
         if not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values [x, y]")
         return v
@@ -46,6 +53,7 @@ class PickPlaceInput(BaseModel):
     @field_validator("location")
     @classmethod
     def validate_location(cls, v):
+        """Validate the relative placement location."""
         if v is None:
             return v
 
@@ -83,6 +91,7 @@ class PickObjectInput(BaseModel):
     @field_validator("pick_coordinate")
     @classmethod
     def validate_coordinate(cls, v):
+        """Validate that the pick coordinate is numeric [x, y]."""
         if not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values [x, y]")
         return v
@@ -99,6 +108,7 @@ class PlaceObjectInput(BaseModel):
     @field_validator("place_coordinate")
     @classmethod
     def validate_coordinate(cls, v):
+        """Validate that the place coordinate is numeric [x, y]."""
         if not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values [x, y]")
         return v
@@ -106,6 +116,7 @@ class PlaceObjectInput(BaseModel):
     @field_validator("location")
     @classmethod
     def validate_location(cls, v):
+        """Validate the relative placement location."""
         if v is None:
             return v
 
@@ -136,6 +147,7 @@ class PushObjectInput(BaseModel):
     @field_validator("push_coordinate")
     @classmethod
     def validate_coordinate(cls, v):
+        """Validate that the push coordinate is numeric [x, y]."""
         if not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values [x, y]")
         return v
@@ -143,6 +155,7 @@ class PushObjectInput(BaseModel):
     @field_validator("direction")
     @classmethod
     def validate_direction(cls, v):
+        """Validate that the push direction is supported."""
         valid_directions = ["up", "down", "left", "right"]
         if v.lower() not in valid_directions:
             raise ValueError(f"Direction must be one of: {', '.join(valid_directions)}")
@@ -160,6 +173,7 @@ class WorkspacePointInput(BaseModel):
     @field_validator("point")
     @classmethod
     def validate_point(cls, v):
+        """Validate that the workspace point name is supported."""
         valid_points = ["upper left corner", "upper right corner", "lower left corner", "lower right corner", "center point"]
         if v.lower() not in valid_points:
             raise ValueError(f"Point must be one of: {', '.join(valid_points)}")
@@ -178,6 +192,7 @@ class GetDetectedObjectsInput(BaseModel):
     @field_validator("coordinate")
     @classmethod
     def validate_coordinate(cls, v):
+        """Validate that the coordinate is numeric [x, y] if provided."""
         if v is not None and not all(isinstance(x, (int, float)) for x in v):
             raise ValueError("Coordinates must be numeric values [x, y]")
         return v
@@ -185,6 +200,7 @@ class GetDetectedObjectsInput(BaseModel):
     @field_validator("location")
     @classmethod
     def validate_location(cls, v):
+        """Validate the relative placement location."""
         if v is None:
             return v
 

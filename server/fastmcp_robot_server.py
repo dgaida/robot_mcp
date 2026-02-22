@@ -1,4 +1,10 @@
-# fastmcp_robot_server.py
+"""
+FastMCP Robot Server.
+
+This module provides a FastMCP server that exposes various robot control tools,
+including pick-and-place, movement, and object detection, with Pydantic validation.
+"""
+
 import argparse
 import functools
 import logging
@@ -41,8 +47,11 @@ def validate_input(model_class):
     """Decorator to validate tool inputs using Pydantic models."""
 
     def decorator(func):
+        """The actual decorator function."""
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """Wrapper that performs Pydantic validation."""
             try:
                 # Validate input using Pydantic model
                 validated_data = model_class(**kwargs)
@@ -112,6 +121,7 @@ def log_tool_call(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper that logs the tool call and its results."""
         tool_name = func.__name__
 
         # Log incoming call
