@@ -98,7 +98,11 @@ class RobotFastMCPClient:
         tool_names = [t.name for t in self.available_tools]
         if "get_system_status" in tool_names:
             print("\n📊 Initial System Status:")
-            await self.call_tool("get_system_status", {})
+            status = await self.call_tool("get_system_status", {})
+            # Store initial status in conversation history for LLM context
+            self.conversation_history.append(
+                {"role": "assistant", "content": f"I have initialized the system. Current status: {status}"}
+            )
 
     async def disconnect(self):
         if hasattr(self, "client"):
