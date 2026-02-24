@@ -2,207 +2,207 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/CHANGELOG/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/CHANGELOG/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/CHANGELOG/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/configuration/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/configuration/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/configuration/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/examples/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/examples/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/examples/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/getting-started/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/getting-started/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/installation/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/installation/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/installation/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/troubleshooting/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/troubleshooting/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/troubleshooting/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/api/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/api/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/architecture/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/architecture/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/development/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/development/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/development/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/development/docstring_style/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/development/docstring_style/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/development/docstring_style/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/development/metrics/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/development/metrics/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/development/metrics/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/development/releasing/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev/development/releasing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/deven/development/releasing/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/dev"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/CHANGELOG/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/CHANGELOG/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devCHANGELOG/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/configuration/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/configuration/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devconfiguration/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/examples/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/examples/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devexamples/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/getting-started/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devgetting-started/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/installation/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/installation/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devinstallation/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/troubleshooting/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/troubleshooting/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devtroubleshooting/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/api/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/api/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devapi/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/architecture/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/architecture/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devarchitecture/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/development/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/development/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devdevelopment/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/development/docstring_style/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/development/docstring_style/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devdevelopment/docstring_style/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/development/metrics/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/development/metrics/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devdevelopment/metrics/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/development/releasing/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/development/releasing/"/>
         <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/robot_mcp/devdevelopment/releasing/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/api_reference_auto/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/api_reference_auto/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/communication_readme/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/communication_readme/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/gradio_setup_instructions/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/gradio_setup_instructions/"/>
     </url>
     <url>
         <loc>https://dgaida.github.io/robot_mcp/dev/en/mcp_api_reference/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-24</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/robot_mcp/dev/en/mcp_api_reference/"/>
     </url>
