@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 # ============================================================================
 # PYDANTIC MODELS FOR TYPE-SAFE CONFIGURATION
@@ -61,10 +61,10 @@ class WorkspaceBounds(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    x_min: float = Field(..., description="Minimum X coordinate (meters)")
-    x_max: float = Field(..., description="Maximum X coordinate (meters)")
-    y_min: float = Field(..., description="Minimum Y coordinate (meters)")
-    y_max: float = Field(..., description="Maximum Y coordinate (meters)")
+    x_min: float = Field(0.0, description="Minimum X coordinate (meters)")
+    x_max: float = Field(0.1, description="Maximum X coordinate (meters)")
+    y_min: float = Field(0.0, description="Minimum Y coordinate (meters)")
+    y_max: float = Field(0.1, description="Maximum Y coordinate (meters)")
 
     @field_validator("x_max")
     @classmethod
@@ -88,9 +88,9 @@ class WorkspaceConfig(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    id: str = Field(..., description="Workspace identifier")
-    bounds: WorkspaceBounds = Field(..., description="Workspace boundaries")
-    center: list[float] = Field(..., description="Workspace center [x, y]")
+    id: str = Field("", description="Workspace identifier")
+    bounds: WorkspaceBounds = Field(default_factory=WorkspaceBounds, description="Workspace boundaries")
+    center: list[float] = Field(default_factory=lambda: [0.0, 0.0], description="Workspace center [x, y]")
 
     @field_validator("center")
     @classmethod
@@ -125,8 +125,8 @@ class RobotConfig(BaseModel):
     verbose: bool = Field(False, description="Enable verbose output")
     enable_camera: bool = Field(True, description="Enable camera")
     camera_update_rate_hz: float = Field(2.0, ge=0.1, le=30.0, description="Camera update rate (Hz)")
-    workspace: Dict[str, WorkspaceConfig] = Field(..., description="Workspace configurations")
-    motion: MotionConfig = Field(..., description="Motion parameters")
+    workspace: Dict[str, WorkspaceConfig] = Field(default_factory=dict, description="Workspace configurations")
+    motion: MotionConfig = Field(default_factory=MotionConfig, description="Motion parameters")
 
     @field_validator("type")
     @classmethod
@@ -159,7 +159,7 @@ class DetectionConfig(BaseModel):
     iou_threshold: float = Field(0.5, ge=0.0, le=1.0, description="IoU threshold")
     max_detections: int = Field(100, ge=1, le=1000, description="Maximum detections")
     default_labels: list[str] = Field(default_factory=list, description="Default object labels")
-    spatial: SpatialConfig = Field(..., description="Spatial query thresholds")
+    spatial: SpatialConfig = Field(default_factory=SpatialConfig, description="Spatial query thresholds")
 
     @field_validator("model")
     @classmethod
@@ -186,7 +186,7 @@ class LLMProviderConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     enabled: bool = Field(True, description="Enable this provider")
-    default_model: str = Field(..., description="Default model name")
+    default_model: str = Field("unknown", description="Default model name")
     models: list[str] = Field(default_factory=list, description="Available models")
     rate_limit_rpm: Optional[int] = Field(None, ge=1, description="Rate limit (requests/min)")
     base_url: Optional[str] = Field(None, description="Base URL for API")
@@ -203,7 +203,7 @@ class LLMConfig(BaseModel):
     enable_cot: bool = Field(True, description="Enable chain-of-thought")
     require_planning: bool = Field(True, description="Require planning phase")
     max_iterations: int = Field(15, ge=1, le=50, description="Max tool-calling iterations")
-    providers: Dict[str, LLMProviderConfig] = Field(..., description="Provider configurations")
+    providers: Dict[str, LLMProviderConfig] = Field(default_factory=dict, description="Provider configurations")
 
     @field_validator("default_provider")
     @classmethod
@@ -266,7 +266,7 @@ class RedisConfig(BaseModel):
     port: int = Field(6379, ge=1, le=65535, description="Redis port")
     db: int = Field(0, ge=0, le=15, description="Redis database number")
     decode_responses: bool = Field(True, description="Decode responses")
-    streams: RedisStreamsConfig = Field(..., description="Stream names")
+    streams: RedisStreamsConfig = Field(default_factory=RedisStreamsConfig, description="Stream names")
 
 
 class GUIConfig(BaseModel):
@@ -296,10 +296,10 @@ class LoggingConfig(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    format: str = Field(..., description="Log message format")
+    format: str = Field("%(asctime)s - %(name)s - %(levelname)s - %(message)s", description="Log message format")
     date_format: str = Field("%Y-%m-%d %H:%M:%S", description="Date format")
-    levels: Dict[str, str] = Field(..., description="Log levels by module")
-    rotation: LogRotationConfig = Field(..., description="Log rotation settings")
+    levels: Dict[str, str] = Field(default_factory=dict, description="Log levels by module")
+    rotation: LogRotationConfig = Field(default_factory=LogRotationConfig, description="Log rotation settings")
 
 
 class EnvironmentOverrides(BaseModel):
@@ -331,6 +331,34 @@ class RobotMCPConfig(BaseModel):
     gui: GUIConfig
     logging: LoggingConfig
     environments: Optional[Dict[str, EnvironmentOverrides]] = None
+
+    @model_validator(mode="after")
+    def validate_merged_config(self) -> "RobotMCPConfig":
+        """
+        Validate that the final merged configuration is complete.
+
+        Ensures that essential fields are present after merging overrides.
+        """
+        # 1. Robot must have workspaces
+        if not self.robot.workspace:
+            raise ValueError("Configuration error: No workspaces defined in 'robot.workspace'")
+
+        # 2. Each workspace must have a valid ID and non-zero bounds
+        for ws_id, ws in self.robot.workspace.items():
+            if not ws.id:
+                raise ValueError(f"Configuration error: Workspace '{ws_id}' has no 'id'")
+            if ws.bounds.x_min == ws.bounds.x_max and ws.bounds.y_min == ws.bounds.y_max:
+                raise ValueError(f"Configuration error: Workspace '{ws_id}' has zero-area bounds")
+
+        # 3. LLM must have at least one provider
+        if not self.llm.providers:
+            raise ValueError("Configuration error: No LLM providers defined in 'llm.providers'")
+
+        # 4. Redis must have stream names
+        if not self.redis.streams.camera or not self.redis.streams.detected_objects:
+            raise ValueError("Configuration error: Missing Redis stream names")
+
+        return self
 
 
 # ============================================================================
