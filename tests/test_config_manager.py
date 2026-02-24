@@ -63,9 +63,7 @@ def test_config_with_environment_override(tmp_path):
         "redis": {"streams": {}},
         "gui": {},
         "logging": {"format": "%(message)s", "levels": {}, "rotation": {}},
-        "environments": {
-            "development": {"server": {"log_level": "DEBUG"}, "robot": {"simulation": True}}
-        },
+        "environments": {"development": {"server": {"log_level": "DEBUG"}, "robot": {"simulation": True}}},
     }
 
     config_file = tmp_path / "robot_config.yaml"
