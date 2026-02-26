@@ -14,8 +14,12 @@ Compatible with Gradio 5.x and 6.x
 
 import asyncio
 import sys
+import warnings
 from pathlib import Path
 from typing import Optional
+
+# Suppress annoying NumPy deprecation warnings from Gradio
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*np.bool8.*")
 
 import cv2
 import gradio as gr
