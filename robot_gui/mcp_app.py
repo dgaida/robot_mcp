@@ -21,12 +21,12 @@ from typing import Optional
 # Suppress annoying NumPy deprecation warnings from Gradio
 warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*np.bool8.*")
 
-import cv2
-import gradio as gr
-import numpy as np
-import redis
-import torch
-from dotenv import load_dotenv
+import cv2  # noqa: E402
+import gradio as gr  # noqa: E402
+import numpy as np  # noqa: E402
+import redis  # noqa: E402
+import torch  # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
 
 # Check Gradio version for compatibility
 try:
@@ -39,17 +39,17 @@ except AttributeError:
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from redis_robot_comm import RedisImageStreamer, RedisTextOverlayManager
+from redis_robot_comm import RedisImageStreamer, RedisTextOverlayManager  # noqa: E402
 
 try:
-    from speech2text import Speech2Text
+    from speech2text import Speech2Text  # noqa: E402
 except (ImportError, OSError):
     print("⚠️ speech2text not available")
     Speech2Text = None
 
 # Import FastMCP client
 try:
-    from client.fastmcp_universal_client import RobotUniversalMCPClient
+    from client.fastmcp_universal_client import RobotUniversalMCPClient  # noqa: E402
 
     HAS_MCP_CLIENT = True
 except ImportError:
